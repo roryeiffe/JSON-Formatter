@@ -1,0 +1,24 @@
+{
+  "id": "8bdf6ecc-0b05-42d7-84ce-ae011aa63db7",
+  "title": "Developing and Debugging Java Applications",
+  "description": "Exa-Java-Fundamentals",
+  "skills": [
+    "Java Core Development",
+    "Integrating SQL with JDBC",
+    "Writing Tests with JUnit"
+  ],
+  "tags": [
+    "Programming Languages",
+    "Backend Developer",
+    "Java",
+    "Beginner"
+  ],
+  "exit-criteria": [
+    "Able to write and execute Java programs",
+    "Understanding of Java strings and associated methods"
+  ],
+  "prerequisites": [
+    "96c99e59-81f5-41c9-b374-cacda7b7147d",
+    "dcc4e1c4-5672-4011-8e98-40a2c7e9ac3e"
+  ]
+}

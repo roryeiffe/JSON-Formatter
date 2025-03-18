@@ -1,0 +1,241 @@
+{
+  "id": "8bdf6ecc-0b05-42d7-84ce-ae011aa63db7",
+  "title": "Developing and Debugging Java Applications",
+  "description": "Learn how to code in basic Java, debug applications, and integrate with SQL.",
+  "modules": [
+      {
+          "id": "19127ca9-6a84-4505-a332-cc9eefd893eb",
+          "title": "Java-Orientation",
+          "url": "modules/java-orientation",
+          "description": "Get accustomed to Java concepts.",
+          "tooltip": " java-orientation",
+          "prerequisites": {
+              "url": "README",
+              "title": "Prerequisites and Learning Objectives",
+              "tooltip": "Prerequisites and Learning Objectives"
+          },
+          "topics": [
+              {
+                  "id": "7dca80ba-17c9-4622-8c47-9b16d2248db0",
+                  "url": "modules/001-java-orientation/001-fullstack-the-big-picture/Cumulative.md",
+                  "title": " Fullstack the Big Picture",
+                  "tooltip": " fullstack-the-big-picture"
+              },
+              {
+                  "id": "d58481c2-b625-4c4a-82b8-af750dfe80e1",
+                  "url": "modules/001-java-orientation/002-os-fundamentals/Cumulative.md",
+                  "title": " OS Fundamentals",
+                  "tooltip": " os-fundamentals"
+              },
+              {
+                  "id": "503c51fd-2216-4df9-9fdc-6e12c85f31d4",
+                  "url": "modules/001-java-orientation/003-linux-file-commands-using-gitbash/Cumulative.md",
+                  "title": " Linux File Commands Using Gitbash",
+                  "tooltip": " linux-file-commands-using-gitbash"
+              },
+              {
+                  "id": "173f1332-e708-4f4c-b34f-97f2af9bfd34",
+                  "url": "modules/001-java-orientation/004-moving-and-deleting-files-using-gitbash/Cumulative.md",
+                  "title": " Moving and Deleting Files Using Gitbash",
+                  "tooltip": " moving-and-deleting-files-using-gitbash"
+              },
+              {
+                  "id": "91c44512-1cac-4ee6-8071-ebb118f13b04",
+                  "url": "modules/001-java-orientation/005-git-fundamentals/Cumulative.md",
+                  "title": " GIT Fundamentals",
+                  "tooltip": " git-fundamentals"
+              },
+              {
+                  "id": "86665b5a-af88-4f6d-b6de-f5f3c34c76ed",
+                  "url": "modules/001-java-orientation/006-initializing-a-repository/Cumulative.md",
+                  "title": " Initializing a Repository",
+                  "tooltip": " initializing-a-repository"
+              },
+              {
+                  "id": "eae9313b-13c4-4ed3-ad09-3939280df073",
+                  "url": "modules/001-java-orientation/007-pushing-to-a-remote-repository/Cumulative.md",
+                  "title": " Pushing to a Remote Repository",
+                  "tooltip": " pushing-to-a-remote-repository"
+              },
+              {
+                  "id": "80b7e48a-19f9-4c43-949c-2f23684a2129",
+                  "url": "modules/001-java-orientation/008-introduciton-to-sdlc/Cumulative.md",
+                  "title": " Introduciton to SDLC",
+                  "tooltip": " introduciton-to-sdlc"
+              },
+              {
+                  "id": "f66d2005-fc84-47bf-9586-5d98d16f376e",
+                  "url": "modules/001-java-orientation/009-waterfall/Cumulative.md",
+                  "title": " Waterfall",
+                  "tooltip": " waterfall"
+              },
+              {
+                  "id": "d90ec51a-603c-4c7b-bad0-e82b1749750d",
+                  "url": "modules/001-java-orientation/010-agile/Cumulative.md",
+                  "title": " Agile",
+                  "tooltip": " agile"
+              },
+              {
+                  "id": "6aff9cf8-64ca-44d5-a270-070451bf019e",
+                  "url": "modules/001-java-orientation/011-persistence-vs-ephemeral-storage/Cumulative.md",
+                  "title": " Persistence vs Ephemeral Storage",
+                  "tooltip": " persistence-vs-ephemeral-storage"
+              }
+          ]
+      },
+      {
+          "id": "5f3bff96-9d17-4053-95b3-3b4bff0a1131",
+          "title": "Java-Basics",
+          "url": "modules/java-basics",
+          "description": "Get hands-on with Java and write some basic programs.",
+          "tooltip": " java-basics",
+          "prerequisites": {
+              "url": "README",
+              "title": "Prerequisites and Learning Objectives",
+              "tooltip": "Prerequisites and Learning Objectives"
+          },
+          "topics": [
+              {
+                  "id": "4cd3a3bd-32e2-41a9-81cf-673b0f044052",
+                  "url": "modules/002-java-basics/000-entities-of-java/Cumulative.md",
+                  "title": " Entities of Java",
+                  "tooltip": " entities-of-java"
+              },
+              {
+                  "id": "f0ec7003-5e3d-4bc0-9ac4-f9c8658308cb",
+                  "url": "modules/002-java-basics/001-language-overview/Cumulative.md",
+                  "title": " Language Overview",
+                  "tooltip": " language-overview"
+              },
+              {
+                  "id": "036e3b12-062d-4dbc-b899-32a675aff760",
+                  "url": "modules/002-java-basics/002-jvm-jre-jdk/Cumulative.md",
+                  "title": " JVM, JRE, JDK",
+                  "tooltip": " jvm-jre-jdk"
+              },
+              {
+                  "id": "e76a4dd9-ab8a-47f2-ac6b-8e8c710126ee",
+                  "url": "modules/002-java-basics/003-compilation-process/Cumulative.md",
+                  "title": " Compilation Process",
+                  "tooltip": " compilation-process"
+              },
+              {
+                  "id": "a42b904d-54f8-4948-bbb8-0b6f7136efd3",
+                  "url": "modules/002-java-basics/004-helloworld/Cumulative.md",
+                  "title": " Hello World",
+                  "tooltip": " helloworld"
+              },
+              {
+                  "id": "bf3f0119-3142-4387-ba27-dfaa9d7a8f58",
+                  "url": "modules/002-java-basics/005-troubleshooting-a-technical-problem/Cumulative.md",
+                  "title": " Troubleshooting a Technical Problem",
+                  "tooltip": " troubleshooting-a-technical-problem"
+              },
+              {
+                  "id": "4c1bcd69-070a-429d-839d-f9f185a92fcf",
+                  "url": "modules/002-java-basics/006-primitive-types/Cumulative.md",
+                  "title": " Primitive Types",
+                  "tooltip": " primitive-types"
+              },
+              {
+                  "id": "7649fe69-9d4d-440e-9ba3-cabf0b4d4f7a",
+                  "url": "modules/002-java-basics/007-working-with-basic-operators/Cumulative.md",
+                  "title": " Working with Basic Operators",
+                  "tooltip": " working-with-basic-operators"
+              },
+              {
+                  "id": "91dfc032-2911-4721-8774-9277cbc030f5",
+                  "url": "modules/002-java-basics/008-reading-from-the-console-scanner/Cumulative.md",
+                  "title": " Reading from the Console Scanner",
+                  "tooltip": " reading-from-the-console-scanner"
+              },
+              {
+                  "id": "e7f63281-8bb8-4f5a-ab46-5af5ced2b9b6",
+                  "url": "modules/002-java-basics/009-flow-control-statements/Cumulative.md",
+                  "title": " Flow Control Statements",
+                  "tooltip": " flow-control-statements"
+              },
+              {
+                  "id": "295201c8-dc66-42f8-905b-40137ce9fcc6",
+                  "url": "modules/002-java-basics/010-debugging/Cumulative.md",
+                  "title": " Debugging",
+                  "tooltip": " debugging"
+              },
+              {
+                  "id": "2bb7ea15-9a0c-486c-b0ec-b7c770cae1f3",
+                  "url": "modules/002-java-basics/011-oop-inheritance/Cumulative.md",
+                  "title": " OOP Inheritance",
+                  "tooltip": " oop-inheritance"
+              },
+              {
+                  "id": "fcd8a595-705f-4d87-82d8-b776d0937339",
+                  "url": "modules/002-java-basics/012-oop-polymorphism/Cumulative.md",
+                  "title": " OOP Polymorphism",
+                  "tooltip": " oop-polymorphism"
+              },
+              {
+                  "id": "fdb66807-5730-41b7-9b66-c87821994294",
+                  "url": "modules/002-java-basics/013-oop-encapsulation/Cumulative.md",
+                  "title": " OOP Encapsulation",
+                  "tooltip": " oop-encapsulation"
+              },
+              {
+                  "id": "dabe8065-0fe9-4946-88d6-8e36d23e4bdd",
+                  "url": "modules/002-java-basics/014-oop-abstraction/Cumulative.md",
+                  "title": " OOP Abstraction",
+                  "tooltip": " oop-abstraction"
+              },
+              {
+                  "id": "e801a1cd-d8cc-4a6b-bc19-249a0c098635",
+                  "url": "modules/002-java-basics/015-packages-and-imports/Cumulative.md",
+                  "title": " Packages and Imports",
+                  "tooltip": " packages-and-imports"
+              },
+              {
+                  "id": "fa2e8178-0071-4c13-95d7-9e4d1f1c5e74",
+                  "url": "modules/002-java-basics/016-introduction-to-java8-features/Cumulative.md",
+                  "title": " Introduction to Java8 Features",
+                  "tooltip": " introduction-to-java8-features"
+              },
+              {
+                  "id": "004eed5e-c9ca-4ce9-b090-94446154d560",
+                  "url": "modules/002-java-basics/017-Scanner/Cumulative.md",
+                  "title": " Scanner",
+                  "tooltip": " Scanner"
+              }
+          ]
+      },
+      {
+          "id": "21bda335-fccc-4c6d-aa5c-3bf9dd4fab62",
+          "title": "Java Methods and Arrays",
+          "url": "modules/java-methods-and-arrays",
+          "description": "Learn how to write/invoke Java methods. Also learn how to work with arrays in Java.",
+          "tooltip": " java-methods-and-arrays",
+          "prerequisites": {
+              "url": "README",
+              "title": "Prerequisites and Learning Objectives",
+              "tooltip": "Prerequisites and Learning Objectives"
+          },
+          "topics": [
+              {
+                  "id": "ff56bb1f-66b8-40b9-9956-580c62ac6655",
+                  "url": "modules/003-java-methods-and-arrays/001-testing-through-the-main-method/Cumulative.md",
+                  "title": " Testing Through the Main Method",
+                  "tooltip": " testing-through-the-main-method"
+              },
+              {
+                  "id": "d5248be4-4c47-45fa-ae84-59ed293fbb06",
+                  "url": "modules/003-java-methods-and-arrays/002-arrays/Cumulative.md",
+                  "title": " Arrays",
+                  "tooltip": " arrays"
+              },
+              {
+                  "id": "d19436b7-11df-4bed-8682-60f2849aba11",
+                  "url": "modules/003-java-methods-and-arrays/003-methods/Cumulative.md",
+                  "title": " Methods",
+                  "tooltip": " methods"
+              }
+          ]
+      }
+  ]
+}

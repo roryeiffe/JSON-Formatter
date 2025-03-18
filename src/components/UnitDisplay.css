@@ -1,0 +1,30 @@
+
+
+.add-activity {
+  /* position: fixed;
+  top: 100px;
+  right: 100px; */
+}
+
+.unit {
+  padding: 20px;
+  text-align: left;
+  width: auto;
+}
+
+.unit-title {
+  font-size: 35px;
+}
+
+.module {
+  margin-left: 10%;
+}
+
+.module-title {
+  font-size: 30px;
+}
+
+
+.topic {
+  margin-left: 5%;
+}
