@@ -13,14 +13,47 @@ type AddActivityProps = {
 
 // Taxonomy Types (Activities, Topics, Modules, Units):
 
+type Tag = {
+  id: string,
+  name: string
+}
+
+type Skill = {
+  id: string,
+  name: string
+}
+
 type Activity = {
   activityId: string,
   activityName: string,
   activityType: string,
+  type: string,
   activityPath: string,
+  activityURL: string,
+  description: string,
+  trainerNotes: string,
+  instruction: string,
+  duration: number,
+  tags: Tag[],
+  skills: Skill[],
+  isReview: boolean,
+  createdAt: Date,
+  isOptional: boolean;
   isILT?: boolean,
   isIST?: boolean,
   isPLT?: boolean,
+}
+
+type UnitActivity = Activity | {
+  unitId: string,
+}
+
+type ModuleActivity = Activity | {
+  moduleId: string
+}
+
+type TopicActivity = Activity | {
+  topicId: string
 }
 
 type Topic = {
@@ -49,6 +82,9 @@ type Module = {
 }
 
 type Unit = {
+  code?: string,
+  name?: string,
+  version?: string,
   id: string,
   title: string,
   description: string,
@@ -72,4 +108,4 @@ type HierarchyItem = {
 }
 
 
-export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType}
+export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity}

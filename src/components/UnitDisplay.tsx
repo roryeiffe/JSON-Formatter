@@ -148,18 +148,22 @@ function UnitDisplay() {
 
 
   const downloadTaxonomyAllFormats = () => {
-    downloadTaxonomyOneFormat('isILT');
-    downloadTaxonomyOneFormat('isIST')
-    downloadTaxonomyOneFormat('isPLT')
+    downloadTaxonomyOneFormat('isILT', 'IN03');
+    downloadTaxonomyOneFormat('isIST', 'IN02')
+    downloadTaxonomyOneFormat('isPLT', 'IN01')
   }
 
-  const downloadTaxonomyOneFormat = (key: activityKey) => {
+  const downloadTaxonomyOneFormat = (key: activityKey, code: string) => {
     if (!unitTaxonomy) return;
     // only grab activities for the designated format:
     let dataFiltered: Unit = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(previewData, null, 2))), key);
     
     // TODO: remove unwanted fields (isPLT, isILT, etc.)
     dataFiltered = removeFormatTags(dataFiltered);
+
+    dataFiltered.code = code;
+    dataFiltered.version = "v1.0";
+    dataFiltered.name = dataFiltered.title;
 
     const fileData = JSON.stringify(dataFiltered);
     // create a blob and remove all unnecessary fields

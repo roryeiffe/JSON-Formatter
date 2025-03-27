@@ -2,9 +2,9 @@ import '../App.css'
 import { useState } from 'react';
 import React from 'react';
 import { AppProps } from '../types';
-import UnitDisplay from './UnitDisplay';
+import UnitDisplay from '../components/UnitDisplay';
 
-const GenerateActivities = () => {
+const GenerateActivitiesPage = () => {
 
 
   return (
@@ -14,4 +14,4 @@ const GenerateActivities = () => {
   )
 }
 
-export default GenerateActivities;
+export default GenerateActivitiesPage;

@@ -2,9 +2,9 @@ import './App.css'
 import { Header } from './components/Header';
 import React from 'react';
 import { AppProps } from './types';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import GenerateJSON from './components/GenerateJSON';
-import GenerateActivities from './components/GenerateActivities';
+import { Route, Routes } from 'react-router-dom';
+import GenerateJSON from './pages/GenerateJSONPage';
+import GenerateActivitiesPage from './pages/GenerateActivitiesPage';
 
 const App = ({ onClick, text }: AppProps) => {
 
@@ -16,7 +16,7 @@ const App = ({ onClick, text }: AppProps) => {
         <Routes>
 
           <Route path="/" Component={GenerateJSON} />
-          <Route path="/activities" Component={GenerateActivities} />
+          <Route path="/activities" Component={GenerateActivitiesPage} />
         </Routes>
 
     </>
