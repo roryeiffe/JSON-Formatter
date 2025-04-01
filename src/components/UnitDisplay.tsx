@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo, act } from "react";
 
 import { Activity, HierarchyItem, HierarchyType, Unit } from "../types";
-import './UnitDisplay.css';
+import '../styles/UnitDisplay.css';
 
 import AddActivity from "./AddActivity";
 import UploadJSON from "./UploadJSON";
 
 type activityKey = "isILT" | "isIST" | "isPLT";
 
-// Ensure that an activity with the same name and type does not exist in the array 
-// to which we are trying to push a new activity
+// Check if the activity already exists in the list of activities
+// This is used to prevent duplicates when adding activities to the unit/module/topic
 const checkActivityExists = (activityToAdd: Activity, activities: Activity[]) => {
   let found = false;
   for (const activity of activities) {
@@ -26,6 +26,11 @@ const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisite
   if (Array.isArray(data)) {
     return data.map(item => createFilteredProxy(item, excludeKeys));
   } else if (typeof data === "object" && data !== null) {
+    // If it's a Date, return it as is
+    if (data instanceof Date) {
+      return data;
+    }
+
     return new Proxy(data, {
       get(target, prop) {
         if (typeof prop === 'string' && excludeKeys.includes(prop)) return undefined;
@@ -39,33 +44,42 @@ const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisite
   return data;
 };
 
+
 // Given a unit to be downloaded, remove the format fields such as "PLT", "ILT", "IST" from each activity
 const removeFormatTags = (unit: Unit) => {
   // Quick helper method:
-  const filterActivitiesArray = (activity:Activity) => ({
-    activityId: activity.activityId,
-    activityName: activity.activityName,
-    activityPath: activity.activityPath,
-    activityType: activity.activityType
-  })
+  const filterActivitiesArray = (activity: Activity) => {
+    const activityClone = structuredClone(activity);
+    delete activityClone['isILT'];
+    delete activityClone['isIST'];
+    delete activityClone['isPLT'];
+    return activityClone;
+  }
   // unit:
   unit.activities = unit.activities?.map(filterActivitiesArray)
 
   //modules and topics:
-  for(let i = 0; i < unit.modules.length; i ++) {
+  for (let i = 0; i < unit.modules.length; i++) {
     unit.modules[i].activities = unit.modules[i].activities?.map(filterActivitiesArray);
-    for(let j = 0; j < unit.modules[i].topics.length; j ++) {
+    for (let j = 0; j < unit.modules[i].topics.length; j++) {
       unit.modules[i].topics[j].activities = unit.modules[i].topics[j].activities?.map(filterActivitiesArray);
     }
   }
-
   return unit;
 }
 
 
+
 function UnitDisplay() {
+  // This state represents the entire unit that we are working on
+  // Including modules, topics, activities, and the associated fields:
   const [unitTaxonomy, setUnitTaxonomy] = useState<Unit>();
+  // This represents the current activity type that we are editing
   const [currentEdit, setCurrentEdit] = useState<HierarchyItem>({ title: '', id: '' });
+  // Represents whether we are currently updating an activity (true) or adding a new one
+  const [updateMode, setUpdateMode] = useState<boolean>(false);
+  // This state represents the id of the current activity that we are updating:
+  const [activityId, setActivityId] = useState<string>('');
 
   const previewData = useMemo(() => createFilteredProxy(unitTaxonomy), [unitTaxonomy]);
 
@@ -77,18 +91,27 @@ function UnitDisplay() {
     const dataParsed = JSON.parse(data);
 
     dataParsed.activities = [];
-      for (let i = 0; i < dataParsed.modules.length; i++) {
-        dataParsed.modules[i].activities = [];
-        for (let j = 0; j < dataParsed.modules[i].topics.length; j++) {
-          dataParsed.modules[i].topics[j].activities = [];
-        }
+    for (let i = 0; i < dataParsed.modules.length; i++) {
+      dataParsed.modules[i].activities = [];
+      for (let j = 0; j < dataParsed.modules[i].topics.length; j++) {
+        dataParsed.modules[i].topics[j].activities = [];
       }
+    }
 
     setUnitTaxonomy(dataParsed);
   }
 
+  // When we click on a hierarchy item or activity, we set the edit window to target that item:
+  const onClickHandler = (currentEdit_: HierarchyItem, updateMode_: boolean, activityId: string = '') => {
+    console.log(updateMode_)
+    setCurrentEdit(currentEdit_);
+    setUpdateMode(updateMode_);
+    setActivityId(activityId);
+
+  }
+
   // Given an activity and an associated hierarchy item (unit/module/topic), add the activity:
-  const addActivityHandler = (activityDetails: Activity, hierarchyType: HierarchyType, id: string) => {
+  const upsertActivityHandler = (activityDetails: Activity, hierarchyType: HierarchyType, id: string) => {
     if (!unitTaxonomy) return;
     let taxonomy = structuredClone(unitTaxonomy);
     switch (hierarchyType) {
@@ -107,23 +130,45 @@ function UnitDisplay() {
 
   // Separate methods for adding to unit, module, and topic
   // add activity to given unit (designated by id paramter)
-  const addActivityToUnit = (taxonomy: Unit, activityDetails: Activity, id: string) => {
+  const addActivityToUnit = (taxonomy: Unit, activityDetails: Activity, unitId: string) => {
     let activities = taxonomy.activities;
-    if (taxonomy.id === id) {
-      console.log("Got here");
-      if (!checkActivityExists(activityDetails, activities!)) taxonomy.activities?.push(activityDetails);
-      else alert('Duplicate Activity Name + Type')
+    if (!activities) return taxonomy;
+    if (taxonomy.id === unitId) {
+      // If we are updating this activity:
+      if (updateMode) {
+        for (let i = 0; i < activities.length; i++) {
+          if (activities[i].activityId === activityId) {
+            activities[i] = activityDetails;
+            break;
+          }
+        }
+      }
+      else {
+        if (!checkActivityExists(activityDetails, activities!)) taxonomy.activities?.push(activityDetails);
+        else alert('Duplicate Activity Name + Type')
+      }
     }
     return taxonomy;
   }
 
   // add activity to given module (designated by id parameter)
-  const addActivityToModule = (taxonomy: Unit, activityDetails: Activity, id: string) => {
+  const addActivityToModule = (taxonomy: Unit, activityDetails: Activity, moduleId: string) => {
     for (let i = 0; i < taxonomy?.modules.length; i++) {
-      if (taxonomy?.modules[i].id === id) {
+      if (taxonomy?.modules[i].id === moduleId) {
         let activities = taxonomy.modules[i].activities;
-        if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].activities?.push(activityDetails);
-        else alert('Duplicate Activity Name + Type');
+        if (!activities) return taxonomy;
+        if (updateMode) {
+          for (let i = 0; i < activities.length; i++) {
+            if (activities[i].activityId === activityId) {
+              activities[i] = activityDetails;
+              break;
+            }
+          }
+        }
+        else {
+          if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].activities?.push(activityDetails);
+          else alert('Duplicate Activity Name + Type');
+        }
         break;
       }
     }
@@ -131,13 +176,23 @@ function UnitDisplay() {
   }
 
   // add activity to given module (designated by id parameter)
-  const addActivityToTopic = (taxonomy: Unit, activityDetails: Activity, id: string) => {
+  const addActivityToTopic = (taxonomy: Unit, activityDetails: Activity, topicId: string) => {
     for (let i = 0; i < taxonomy?.modules.length; i++) {
       for (let j = 0; j < (taxonomy?.modules[i].topics?.length || 0); j++) {
-        if (taxonomy.modules[i].topics[j].id === id) {
+        if (taxonomy.modules[i].topics[j].id === topicId) {
           let activities = taxonomy.modules[i].topics[j].activities;
-          if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].topics[j].activities?.push(activityDetails);
-          else alert('Duplicate Activity Name + Type');
+          if (!activities) return taxonomy;
+          if (updateMode) {
+            for (let i = 0; i < activities.length; i++) {
+              if (activities[i].activityId === activityId) {
+                activities[i] = activityDetails;
+                break;
+              }
+            }
+          } else {
+            if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].topics[j].activities?.push(activityDetails);
+            else alert('Duplicate Activity Name + Type');
+          }
           return taxonomy;
         }
       }
@@ -147,17 +202,19 @@ function UnitDisplay() {
 
 
 
+  // Call the downloadTaxonomy functions for each format (ILT, PLT, IST)
   const downloadTaxonomyAllFormats = () => {
     downloadTaxonomyOneFormat('isILT', 'IN03');
     downloadTaxonomyOneFormat('isIST', 'IN02')
     downloadTaxonomyOneFormat('isPLT', 'IN01')
   }
 
+  // download the format file for one specific format:
   const downloadTaxonomyOneFormat = (key: activityKey, code: string) => {
     if (!unitTaxonomy) return;
     // only grab activities for the designated format:
     let dataFiltered: Unit = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(previewData, null, 2))), key);
-    
+
     // TODO: remove unwanted fields (isPLT, isILT, etc.)
     dataFiltered = removeFormatTags(dataFiltered);
 
@@ -175,18 +232,20 @@ function UnitDisplay() {
     linkElement.click();
   }
 
-  const filterActivitiesByFormat = (data:Unit, key:activityKey) => {
+  // given a unit and a key, only keep those activities where the key evaluates to true
+  // example usage: filterActivitesByFormat(data, 'isPLT') -- would only keep PLT activities:
+  const filterActivitiesByFormat = (data: Unit, key: activityKey) => {
     // Unit Level
-    data.activities = data.activities?.filter((activity:Activity) => activity[key])
+    data.activities = data.activities?.filter((activity: Activity) => activity[key])
 
     // Module Level
-    for(let i = 0; i < data.modules.length; i ++) {
+    for (let i = 0; i < data.modules.length; i++) {
       data.modules[i].activities = data.modules[i].activities?.filter(activity => activity[key])
     }
 
     // Topic Level
-    for(let i = 0; i < data.modules.length; i ++) {
-      for(let j = 0; j < data.modules.length; j ++) {
+    for (let i = 0; i < data.modules.length; i++) {
+      for (let j = 0; j < data.modules.length; j++) {
         data.modules[i].topics[j].activities = data.modules[i].topics[j].activities?.filter(activity => activity[key])
       }
     }
@@ -212,39 +271,47 @@ function UnitDisplay() {
               <h2 className='font-bold'>Activities:</h2>
               <ul className="max-w-md space-y-1 list-disc list-inside">
                 {unitTaxonomy.activities?.map((activity: Activity) =>
-                  <li key={activity.activityName + activity.activityType}>{activity.activityName} ({activity.activityType})</li>
+                  <li className='activity' key={activity.activityName + activity.activityType}>
+                    <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.UNIT, title: unitTaxonomy.title, id: unitTaxonomy.id }, true, activity.activityId)}>{activity.activityName} ({activity.activityType})</button>
+                  </li>
                 )}
               </ul>
               <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 
                 text-white font-semibold rounded-lg shadow-lg transform text-center
                 transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto 
-                focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8" onClick={() => setCurrentEdit({ hierarchyType: HierarchyType.UNIT, title: unitTaxonomy.title, id: unitTaxonomy.id })}>Add Activity (Unit Level)</button>
+                focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8" onClick={() => onClickHandler({ hierarchyType: HierarchyType.UNIT, title: unitTaxonomy.title, id: unitTaxonomy.id }, false)}>Add Activity (Unit Level)</button>
 
               {unitTaxonomy.modules.map(module =>
                 <div className='module bg-gray-300 mb-5 p-4 rounded-xl' key={module.id}>
                   <h3 className='module-title font-bold'>{module.title} (Module)</h3>
                   <ul className="max-w-md space-y-1 list-disc list-inside">
                     {module.activities?.map((activity: Activity) =>
-                      <li key={activity.activityName + activity.activityType}>{activity.activityName} ({activity.activityType})</li>
+                      <li key={activity.activityName + activity.activityType}>
+                        <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.MODULE, title: module.title, id: module.id }, true, activity.activityId)} >{activity.activityName} ({activity.activityType})</button>
+                      </li>
                     )}
                   </ul>
                   <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 
                   text-white font-semibold rounded-lg shadow-lg transform text-center
                   transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto 
-                  focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8"onClick={() => setCurrentEdit({ hierarchyType: HierarchyType.MODULE, title: module.title, id: module.id })}>Add Activity (Module Level)</button>
+                  focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8"onClick={() => onClickHandler({ hierarchyType: HierarchyType.MODULE, title: module.title, id: module.id }, false)}>Add Activity (Module Level)</button>
 
                   {module.topics.map(topic =>
                     <div className='topic bg-gray-200 mb-5 p-3 rounded-xl' key={topic.id}>
                       <p className='topic-title text-xl font-bold'>{topic.title} (Topic)</p>
                       <ul className="max-w-md space-y-1 list-disc list-inside ">
                         {topic.activities?.map((activity: Activity) =>
-                          <li key={activity.activityName + activity.activityType}>{activity.activityName} ({activity.activityType})</li>
+                          <li key={activity.activityName + activity.activityType}>
+                            <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.TOPIC, title: topic.title, id: topic.id }, true, activity.activityId)}>
+                              {activity.activityName} ({activity.activityType})
+                            </button>
+                          </li>
                         )}
                       </ul>
                       <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 
                       text-white font-semibold rounded-lg shadow-lg transform text-center
                       transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto 
-                      focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer" onClick={() => setCurrentEdit({ hierarchyType: HierarchyType.TOPIC, title: topic.title, id: topic.id })}>Add Activity (Topic Level)</button>
+                      focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer" onClick={() => onClickHandler({ hierarchyType: HierarchyType.TOPIC, title: topic.title, id: topic.id }, false)}>Add Activity (Topic Level)</button>
                     </div>
                   )}
                 </div>
@@ -255,7 +322,7 @@ function UnitDisplay() {
         </div>
 
         <div className="add-activity">
-          <AddActivity hierarchyItem={currentEdit} addActivityFunc={addActivityHandler} />
+          <AddActivity hierarchyItem={currentEdit} upsertActivityFunc={upsertActivityHandler} updateMode={updateMode} activityId={activityId} />
 
           <h2 className="text-2xl font-semibold text-center mb-4 mt-5">Preview of Unit:</h2>
           <button

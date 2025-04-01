@@ -1,10 +1,10 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { Activity, AddActivityProps } from "../types";
 
-import './AddActivity.css';
+import '../styles/AddActivity.css';
 import { IDsGenerator } from "../utils/IDsGenerator";
 
-function AddActivity({ hierarchyItem, addActivityFunc }: AddActivityProps) {
+function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId='' }: AddActivityProps) {
 
   const [activity, setActivity] = useState<Activity>({ 
     activityId: "", 
@@ -24,11 +24,13 @@ function AddActivity({ hierarchyItem, addActivityFunc }: AddActivityProps) {
     isOptional: false,
     isILT: false, 
     isIST: false, 
-    isPLT: false,   });
+    isPLT: true,   });
 
   useEffect(() => {
 
   }, [])
+
+  console.log(activityId);
 
   const onChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
     setActivity({
@@ -59,8 +61,11 @@ function AddActivity({ hierarchyItem, addActivityFunc }: AddActivityProps) {
     }
 
     if (!hierarchyItem.hierarchyType) return;
-    activity.activityId = await IDsGenerator(activity.activityName);
-    addActivityFunc(activity, hierarchyItem.hierarchyType, hierarchyItem.id);
+    if(!updateMode) {
+      activity.activityId = await IDsGenerator(activity.activityName);
+    }
+    upsertActivityFunc(activity, hierarchyItem.hierarchyType, hierarchyItem.id);
+    
   }
 
   return (
@@ -68,7 +73,7 @@ function AddActivity({ hierarchyItem, addActivityFunc }: AddActivityProps) {
       <form className="max-w-lg my-7 mx-auto p-6 bg-white rounded-lg shadow-md" onSubmit={(e: FormEvent<HTMLFormElement>) => onSubmitHandler(e)}>
         {hierarchyItem.hierarchyType ? <>
           <div className="gap-[50px] text-2xl font-bold text-center">
-            <h2 className="text-3xl">Add Activity</h2>
+            <h2 className="text-3xl">{updateMode ? 'Update' : 'Add'} Activity</h2>
             <h2 className="text-2xl">{hierarchyItem.hierarchyType}</h2>
             <h3>"{hierarchyItem.title}"</h3>
           </div>
@@ -137,7 +142,7 @@ function AddActivity({ hierarchyItem, addActivityFunc }: AddActivityProps) {
           <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 
       text-white font-semibold rounded-lg shadow-lg transform text-center
       transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto 
-      focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer block" type='submit'>Add Activity</button>
+      focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer block" type='submit'>{updateMode ? 'Update': 'Add'} Activity</button>
         </> :
           <h2>Select a button on the left to access this form</h2>}
       </form>

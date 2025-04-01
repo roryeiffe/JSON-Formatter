@@ -28,3 +28,8 @@
 .topic {
   margin-left: 5%;
 }
+
+
+.activity {
+  cursor: pointer;
+}

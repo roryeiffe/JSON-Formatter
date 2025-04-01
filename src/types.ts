@@ -8,7 +8,9 @@ type AppProps = {
 
 type AddActivityProps = {
   hierarchyItem: HierarchyItem,
-  addActivityFunc: (activityDetails: Activity,  hierarchyType: HierarchyType, id: string) => void
+  upsertActivityFunc: (activityDetails: Activity,  hierarchyType: HierarchyType, id: string) => void,
+  updateMode: boolean,
+  activityId?: string
 }
 
 // Taxonomy Types (Activities, Topics, Modules, Units):
