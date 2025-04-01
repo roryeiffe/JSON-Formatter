@@ -27,6 +27,9 @@ type Skill = {
 
 type Activity = {
   activityId: string,
+  unitId?: string,
+  moduleId?: string,
+  topicId?: string,
   activityName: string,
   activityType: string,
   type: string,
@@ -63,7 +66,7 @@ type Topic = {
   url: string,
   title: string,
   tooltip: string,
-  activities?: Activity[]
+  topicActivities?: Activity[]
 }
 
 type Prerequisites = {
@@ -80,7 +83,7 @@ type Module = {
   tooltip: string,
   prerequisites: Prerequisites,
   topics: Topic [],
-  activities?: Activity[]
+  moduleActivities?: Activity[]
 }
 
 type Unit = {
@@ -91,7 +94,7 @@ type Unit = {
   title: string,
   description: string,
   modules: Module [],
-  activities?: Activity[]
+  unitActivities?: Activity[]
 }
 
 // Represents the Different Types of Hierarchy Items

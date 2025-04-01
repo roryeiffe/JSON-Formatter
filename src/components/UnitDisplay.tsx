@@ -22,7 +22,7 @@ const checkActivityExists = (activityToAdd: Activity, activities: Activity[]) =>
 }
 
 // Create simplified version of the data, removing unnecessary ids, etc.
-const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisites", "description", "tooltip", "url"]) => {
+const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisites", 'description', "tooltip", "url"]) => {
   if (Array.isArray(data)) {
     return data.map(item => createFilteredProxy(item, excludeKeys));
   } else if (typeof data === "object" && data !== null) {
@@ -33,8 +33,15 @@ const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisite
 
     return new Proxy(data, {
       get(target, prop) {
-        if (typeof prop === 'string' && excludeKeys.includes(prop)) return undefined;
         const value = target[prop as keyof typeof target];
+
+        // Check if this is an activity item (e.g., based on a type field)
+        const isActivity = target.hasOwnProperty("activityId");
+
+        // Exclude "description" only if it's NOT an activity item
+        if (typeof prop === 'string' && excludeKeys.includes(prop) && !(isActivity && prop === "description")) {
+          return undefined;
+        }
         return typeof value === "object" && value !== null
           ? createFilteredProxy(value, excludeKeys)
           : value;
@@ -56,13 +63,13 @@ const removeFormatTags = (unit: Unit) => {
     return activityClone;
   }
   // unit:
-  unit.activities = unit.activities?.map(filterActivitiesArray)
+  unit.unitActivities = unit.unitActivities?.map(filterActivitiesArray)
 
   //modules and topics:
   for (let i = 0; i < unit.modules.length; i++) {
-    unit.modules[i].activities = unit.modules[i].activities?.map(filterActivitiesArray);
+    unit.modules[i].moduleActivities = unit.modules[i].moduleActivities?.map(filterActivitiesArray);
     for (let j = 0; j < unit.modules[i].topics.length; j++) {
-      unit.modules[i].topics[j].activities = unit.modules[i].topics[j].activities?.map(filterActivitiesArray);
+      unit.modules[i].topics[j].topicActivities = unit.modules[i].topics[j].topicActivities?.map(filterActivitiesArray);
     }
   }
   return unit;
@@ -90,11 +97,11 @@ function UnitDisplay() {
   const uploadJSONHandler = (data: string) => {
     const dataParsed = JSON.parse(data);
 
-    dataParsed.activities = [];
+    dataParsed.unitActivities = [];
     for (let i = 0; i < dataParsed.modules.length; i++) {
-      dataParsed.modules[i].activities = [];
+      dataParsed.modules[i].moduleActivities = [];
       for (let j = 0; j < dataParsed.modules[i].topics.length; j++) {
-        dataParsed.modules[i].topics[j].activities = [];
+        dataParsed.modules[i].topics[j].topicActivities = [];
       }
     }
 
@@ -131,7 +138,8 @@ function UnitDisplay() {
   // Separate methods for adding to unit, module, and topic
   // add activity to given unit (designated by id paramter)
   const addActivityToUnit = (taxonomy: Unit, activityDetails: Activity, unitId: string) => {
-    let activities = taxonomy.activities;
+    activityDetails.unitId = unitId
+    let activities = taxonomy.unitActivities;
     if (!activities) return taxonomy;
     if (taxonomy.id === unitId) {
       // If we are updating this activity:
@@ -139,12 +147,13 @@ function UnitDisplay() {
         for (let i = 0; i < activities.length; i++) {
           if (activities[i].activityId === activityId) {
             activities[i] = activityDetails;
+            alert('Activity updated!');
             break;
           }
         }
       }
       else {
-        if (!checkActivityExists(activityDetails, activities!)) taxonomy.activities?.push(activityDetails);
+        if (!checkActivityExists(activityDetails, activities!)) taxonomy.unitActivities?.push(activityDetails);
         else alert('Duplicate Activity Name + Type')
       }
     }
@@ -153,20 +162,22 @@ function UnitDisplay() {
 
   // add activity to given module (designated by id parameter)
   const addActivityToModule = (taxonomy: Unit, activityDetails: Activity, moduleId: string) => {
+    activityDetails.moduleId = moduleId
     for (let i = 0; i < taxonomy?.modules.length; i++) {
       if (taxonomy?.modules[i].id === moduleId) {
-        let activities = taxonomy.modules[i].activities;
+        let activities = taxonomy.modules[i].moduleActivities;
         if (!activities) return taxonomy;
         if (updateMode) {
           for (let i = 0; i < activities.length; i++) {
             if (activities[i].activityId === activityId) {
               activities[i] = activityDetails;
+              alert('Activity updated!');
               break;
             }
           }
         }
         else {
-          if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].activities?.push(activityDetails);
+          if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].moduleActivities?.push(activityDetails);
           else alert('Duplicate Activity Name + Type');
         }
         break;
@@ -177,20 +188,22 @@ function UnitDisplay() {
 
   // add activity to given module (designated by id parameter)
   const addActivityToTopic = (taxonomy: Unit, activityDetails: Activity, topicId: string) => {
+    activityDetails.topicId = topicId
     for (let i = 0; i < taxonomy?.modules.length; i++) {
       for (let j = 0; j < (taxonomy?.modules[i].topics?.length || 0); j++) {
         if (taxonomy.modules[i].topics[j].id === topicId) {
-          let activities = taxonomy.modules[i].topics[j].activities;
+          let activities = taxonomy.modules[i].topics[j].topicActivities;
           if (!activities) return taxonomy;
           if (updateMode) {
             for (let i = 0; i < activities.length; i++) {
               if (activities[i].activityId === activityId) {
                 activities[i] = activityDetails;
+                alert('Activity updated!');
                 break;
               }
             }
           } else {
-            if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].topics[j].activities?.push(activityDetails);
+            if (!checkActivityExists(activityDetails, activities!)) taxonomy.modules[i].topics[j].topicActivities?.push(activityDetails);
             else alert('Duplicate Activity Name + Type');
           }
           return taxonomy;
@@ -236,17 +249,17 @@ function UnitDisplay() {
   // example usage: filterActivitesByFormat(data, 'isPLT') -- would only keep PLT activities:
   const filterActivitiesByFormat = (data: Unit, key: activityKey) => {
     // Unit Level
-    data.activities = data.activities?.filter((activity: Activity) => activity[key])
+    data.unitActivities = data.unitActivities?.filter((activity: Activity) => activity[key])
 
     // Module Level
     for (let i = 0; i < data.modules.length; i++) {
-      data.modules[i].activities = data.modules[i].activities?.filter(activity => activity[key])
+      data.modules[i].moduleActivities = data.modules[i].moduleActivities?.filter(activity => activity[key])
     }
 
     // Topic Level
     for (let i = 0; i < data.modules.length; i++) {
       for (let j = 0; j < data.modules.length; j++) {
-        data.modules[i].topics[j].activities = data.modules[i].topics[j].activities?.filter(activity => activity[key])
+        data.modules[i].topics[j].topicActivities = data.modules[i].topics[j].topicActivities?.filter(activity => activity[key])
       }
     }
     return data;
@@ -270,7 +283,7 @@ function UnitDisplay() {
               <h1 className='unit-title font-bold'>{unitTaxonomy.title} (Unit)</h1>
               <h2 className='font-bold'>Activities:</h2>
               <ul className="max-w-md space-y-1 list-disc list-inside">
-                {unitTaxonomy.activities?.map((activity: Activity) =>
+                {unitTaxonomy.unitActivities?.map((activity: Activity) =>
                   <li className='activity' key={activity.activityName + activity.activityType}>
                     <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.UNIT, title: unitTaxonomy.title, id: unitTaxonomy.id }, true, activity.activityId)}>{activity.activityName} ({activity.activityType})</button>
                   </li>
@@ -285,7 +298,7 @@ function UnitDisplay() {
                 <div className='module bg-gray-300 mb-5 p-4 rounded-xl' key={module.id}>
                   <h3 className='module-title font-bold'>{module.title} (Module)</h3>
                   <ul className="max-w-md space-y-1 list-disc list-inside">
-                    {module.activities?.map((activity: Activity) =>
+                    {module.moduleActivities?.map((activity: Activity) =>
                       <li key={activity.activityName + activity.activityType}>
                         <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.MODULE, title: module.title, id: module.id }, true, activity.activityId)} >{activity.activityName} ({activity.activityType})</button>
                       </li>
@@ -300,7 +313,7 @@ function UnitDisplay() {
                     <div className='topic bg-gray-200 mb-5 p-3 rounded-xl' key={topic.id}>
                       <p className='topic-title text-xl font-bold'>{topic.title} (Topic)</p>
                       <ul className="max-w-md space-y-1 list-disc list-inside ">
-                        {topic.activities?.map((activity: Activity) =>
+                        {topic.topicActivities?.map((activity: Activity) =>
                           <li key={activity.activityName + activity.activityType}>
                             <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.TOPIC, title: topic.title, id: topic.id }, true, activity.activityId)}>
                               {activity.activityName} ({activity.activityType})
