@@ -5,6 +5,7 @@ import { AppProps } from './types';
 import { Route, Routes } from 'react-router-dom';
 import GenerateJSON from './pages/GenerateJSONPage';
 import GenerateActivitiesPage from './pages/GenerateActivitiesPage';
+import ArtifactAttachmentForm from './components/form-components/ArtifactAttachmentForm';
 
 const App = ({ onClick, text }: AppProps) => {
 
@@ -14,11 +15,9 @@ const App = ({ onClick, text }: AppProps) => {
 
       <Header></Header>
         <Routes>
-
           <Route path="/" Component={GenerateJSON} />
           <Route path="/activities" Component={GenerateActivitiesPage} />
         </Routes>
-
     </>
   )
 }

@@ -10,7 +10,12 @@ type AddActivityProps = {
   hierarchyItem: HierarchyItem,
   upsertActivityFunc: (activityDetails: Activity,  hierarchyType: HierarchyType, id: string) => void,
   updateMode: boolean,
-  activityId?: string
+  activityProp?: Activity
+}
+
+type ArtifactAttachmentProps = {
+  activity: Activity,
+  setActivity: (activity: Activity) => void,
 }
 
 // Taxonomy Types (Activities, Topics, Modules, Units):
@@ -43,7 +48,11 @@ type Activity = {
   skills: Skill[],
   isReview: boolean,
   createdAt: Date,
-  isOptional: boolean;
+  isOptional: boolean,
+  maxScore?: number,
+  githubRepositoryUrl?: string,
+  vsCodeExtensionUrl?: string,
+  artifactAttachments: ArtifactAttachment[],
   isILT?: boolean,
   isIST?: boolean,
   isPLT?: boolean,
@@ -112,5 +121,13 @@ type HierarchyItem = {
   id: string
 }
 
+type ArtifactAttachment = {
+  name: string,
+  description: string,
+  fileUrl: string,
+  fileName: string,
+  fileSize: string
+}
 
-export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity}
+
+export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity, ArtifactAttachment, ArtifactAttachmentProps}

@@ -85,8 +85,8 @@ function UnitDisplay() {
   const [currentEdit, setCurrentEdit] = useState<HierarchyItem>({ title: '', id: '' });
   // Represents whether we are currently updating an activity (true) or adding a new one
   const [updateMode, setUpdateMode] = useState<boolean>(false);
-  // This state represents the id of the current activity that we are updating:
-  const [activityId, setActivityId] = useState<string>('');
+  // This state represents the current activity that we are updating:
+  const [activityFocused, setActivityFocused] = useState<Activity>();
 
   const previewData = useMemo(() => createFilteredProxy(unitTaxonomy), [unitTaxonomy]);
 
@@ -109,11 +109,12 @@ function UnitDisplay() {
   }
 
   // When we click on a hierarchy item or activity, we set the edit window to target that item:
-  const onClickHandler = (currentEdit_: HierarchyItem, updateMode_: boolean, activityId: string = '') => {
+  const onClickHandler = (currentEdit_: HierarchyItem, updateMode_: boolean, activity?: Activity) => {
     console.log(updateMode_)
     setCurrentEdit(currentEdit_);
     setUpdateMode(updateMode_);
-    setActivityId(activityId);
+    console.log(activity);
+    if(activity) setActivityFocused(activity);
 
   }
 
@@ -145,7 +146,7 @@ function UnitDisplay() {
       // If we are updating this activity:
       if (updateMode) {
         for (let i = 0; i < activities.length; i++) {
-          if (activities[i].activityId === activityId) {
+          if (activities[i].activityId === activityDetails.activityId) {
             activities[i] = activityDetails;
             alert('Activity updated!');
             break;
@@ -169,7 +170,7 @@ function UnitDisplay() {
         if (!activities) return taxonomy;
         if (updateMode) {
           for (let i = 0; i < activities.length; i++) {
-            if (activities[i].activityId === activityId) {
+            if (activities[i].activityId === activityDetails.activityId) {
               activities[i] = activityDetails;
               alert('Activity updated!');
               break;
@@ -196,7 +197,7 @@ function UnitDisplay() {
           if (!activities) return taxonomy;
           if (updateMode) {
             for (let i = 0; i < activities.length; i++) {
-              if (activities[i].activityId === activityId) {
+              if (activities[i].activityId === activityDetails.activityId) {
                 activities[i] = activityDetails;
                 alert('Activity updated!');
                 break;
@@ -285,7 +286,7 @@ function UnitDisplay() {
               <ul className="max-w-md space-y-1 list-disc list-inside">
                 {unitTaxonomy.unitActivities?.map((activity: Activity) =>
                   <li className='activity' key={activity.activityName + activity.activityType}>
-                    <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.UNIT, title: unitTaxonomy.title, id: unitTaxonomy.id }, true, activity.activityId)}>{activity.activityName} ({activity.activityType})</button>
+                    <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.UNIT, title: unitTaxonomy.title, id: unitTaxonomy.id }, true, activity)}>{activity.activityName} ({activity.activityType})</button>
                   </li>
                 )}
               </ul>
@@ -300,7 +301,7 @@ function UnitDisplay() {
                   <ul className="max-w-md space-y-1 list-disc list-inside">
                     {module.moduleActivities?.map((activity: Activity) =>
                       <li key={activity.activityName + activity.activityType}>
-                        <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.MODULE, title: module.title, id: module.id }, true, activity.activityId)} >{activity.activityName} ({activity.activityType})</button>
+                        <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.MODULE, title: module.title, id: module.id }, true, activity)} >{activity.activityName} ({activity.activityType})</button>
                       </li>
                     )}
                   </ul>
@@ -315,7 +316,7 @@ function UnitDisplay() {
                       <ul className="max-w-md space-y-1 list-disc list-inside ">
                         {topic.topicActivities?.map((activity: Activity) =>
                           <li key={activity.activityName + activity.activityType}>
-                            <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.TOPIC, title: topic.title, id: topic.id }, true, activity.activityId)}>
+                            <button className='cursor-pointer' onClick={() => onClickHandler({ hierarchyType: HierarchyType.TOPIC, title: topic.title, id: topic.id }, true, activity)}>
                               {activity.activityName} ({activity.activityType})
                             </button>
                           </li>
@@ -335,7 +336,7 @@ function UnitDisplay() {
         </div>
 
         <div className="add-activity">
-          <AddActivity hierarchyItem={currentEdit} upsertActivityFunc={upsertActivityHandler} updateMode={updateMode} activityId={activityId} />
+          <AddActivity hierarchyItem={currentEdit} upsertActivityFunc={upsertActivityHandler} updateMode={updateMode} activityProp={activityFocused} />
 
           <h2 className="text-2xl font-semibold text-center mb-4 mt-5">Preview of Unit:</h2>
           <button

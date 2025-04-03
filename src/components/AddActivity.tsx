@@ -1,10 +1,16 @@
-import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { Activity, AddActivityProps } from "../types";
+import React, { useState, useEffect, ChangeEvent, FormEvent, act } from "react";
+import { Activity, AddActivityProps, ArtifactAttachment } from "../types";
 
 import '../styles/AddActivity.css';
 import { IDsGenerator } from "../utils/IDsGenerator";
+import ArtifactAttachmentForm from "./form-components/ArtifactAttachmentForm";
 
-function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId = '' }: AddActivityProps) {
+const commonPLTTypes = ['ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT0042', 'ACT005', 'ACT0061', 'ACT0062', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'ACT012', 'ACT013']
+const commonILTTypes = ['ACT001', 'ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT005', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'Project -> Kick Off']
+const commonISTTypes = ['ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT0042', 'ACT005', 'ACT0061', 'ACT0062', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'ACT012', 'ACT013']
+
+
+function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityProp }: AddActivityProps) {
 
   const [tags, setTags] = useState<string>('');
 
@@ -12,7 +18,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
     activityId: "",
     activityName: 'Default Activity Name',
     activityPath: './path',
-    activityURL: '',
+    activityURL: 'http://example.com',
     activityType: 'lecture',
     type: 'ACT0063',
     description: '',
@@ -24,16 +30,23 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
     createdAt: new Date(Date.now()),
     isReview: false,
     isOptional: false,
-    isILT: false,
+    maxScore: 0,
+    githubRepositoryUrl: '',
+    vsCodeExtensionUrl: '',
+    artifactAttachments: [],
+    isILT: true,
     isIST: false,
     isPLT: false,
   });
 
   useEffect(() => {
+    if(activityProp) {
+      console.log(activityProp)
+      setActivity(activityProp);
+    }
 
-  }, [])
+  }, [activityProp])
 
-  console.log(activityId);
 
   const onChangeHandler = (event: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>) => {
     setActivity({
@@ -49,15 +62,20 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
     })
   }
 
-  const onChangeSelectHandler = (event: ChangeEvent<HTMLSelectElement>) => {
+  const onChangeActivityTypeHandler = (event: ChangeEvent<HTMLSelectElement>) => {
+    const activityClone = structuredClone(activity);
+
+    if (commonILTTypes.includes(event.target.value)) activityClone.isILT = true;
+    if (commonISTTypes.includes(event.target.value)) activityClone.isIST = true;
+    if (commonPLTTypes.includes(event.target.value)) activityClone.isPLT = true;
+
     setActivity({
-      ...activity,
-      activityType: event.target.value
+      ...activityClone,
+      type: event.target.value
     })
   }
 
   const onSubmitHandler = async (event: FormEvent<HTMLFormElement>) => {
-    console.log(activity);
     event.preventDefault();
     if (!(activity.isILT || activity.isIST || activity.isPLT)) {
       alert('Need to choose at least one training format (ILT, IST, PST)')
@@ -69,6 +87,10 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
       activity.activityId = await IDsGenerator(activity.activityName);
     }
     upsertActivityFunc(activity, hierarchyItem.hierarchyType, hierarchyItem.id);
+    setActivity({
+      ...activity,
+      artifactAttachments: [],
+    });
 
   }
 
@@ -83,23 +105,23 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
           </div>
 
           <label htmlFor="activity-name" className="block text-xl mt-2">Activity Name*</label>
-          <input id="activity-name" type="text" className="block px-4 py-2 mt-2 border
+          <input required id="activity-name" type="text" className="block px-4 py-2 mt-2 border
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" name='activityName' value={activity?.activityName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
           <label htmlFor="activity-path" className="block text-xl mt-2">Activity Path*</label>
-          <input id="activity-path" type="text" className="block px-4 py-2 mt-2 border
+          <input required id="activity-path" type="text" className="block px-4 py-2 mt-2 border
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" name='activityPath' value={activity?.activityPath} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
           <label htmlFor="activity-url" className="block text-xl mt-2">Activity URL*</label>
-          <input id="activity-url" type="text" className="block px-4 py-2 mt-2 border
+          <input required id="activity-url" type="text" className="block px-4 py-2 mt-2 border
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" name='activityURL' value={activity?.activityURL} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
           <label htmlFor="activity-type" className="block text-xl mt-2">Activity Type*</label>
           <select id='activity-type' className=" border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 bg-white placeholder-gray-500
-" onChange={(e) => onChangeSelectHandler(e)} value={activity.activityType}>
+" onChange={(e) => onChangeActivityTypeHandler(e)} value={activity.type}>
             <option value='ACT001'>Administrative Task</option>
             <option value='ACT002'>Project Evaluation</option>
             <option value='ACT003'>Exam</option>
@@ -122,6 +144,26 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
             <option value='ACT013'>Review - Office Hours</option>
           </select>
 
+          <h3 className='block text-xl mt-2'>Applicable Formats (Choose At Least One):</h3>
+          <div className='text-2xl flex justify-around'>
+
+            <div>
+              <label className='mr-2' htmlFor="isILT">ILT</label>
+              <input className='scale-150' id="isILT" checked={activity?.isILT} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} type='checkbox' name='isILT' />
+            </div>
+
+            <div>
+              <label className='mr-2' htmlFor="isIST">IST</label>
+              <input className='scale-150' id="isIST" checked={activity?.isIST} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} type='checkbox' name='isIST' />
+            </div>
+
+            <div>
+              <label className='mr-2' htmlFor="isPLT">PLT</label>
+              <input className='scale-150' id="isPLT" checked={activity?.isPLT} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} type='checkbox' name='isPLT' />
+            </div>
+
+          </div>
+
           <label className="block text-xl mt-2" htmlFor='description'>Description</label>
           <textarea onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChangeHandler(e)} value={activity.description} name='description' id='description' className="block px-4 py-2 mt-2 border
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
@@ -142,38 +184,35 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityId
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
-          <label className = "block text-xl mt-2 text-center" htmlFor='isReview'>Is Review?</label>
-          <input className = 'w-1/1 scale-200' id='isReview' type='checkbox' name='isReview' checked={activity?.isReview} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} />
-          
-          <label className = "block text-xl mt-2 text-center" htmlFor='isOptional'>Is Optional?</label>
-          <input className = 'w-1/1 scale-200' id='isOptional' type='checkbox' name='isOptional' checked={activity?.isOptional} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} />
+          <label className="block text-xl mt-2 text-center" htmlFor='isReview'>Is Review?</label>
+          <input className='w-1/1 scale-200' id='isReview' type='checkbox' name='isReview' checked={activity?.isReview} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} />
 
-          <label className = "block text-xl mt-2 text-center" htmlFor='tags'>Enter tags, separated by commas</label>
-          <textarea onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTags(e.target.value)} value={tags} name='tags' id='tags' className="block px-4 py-2 mt-2 border w-1/1"/>
-          
+          <label className="block text-xl mt-2 text-center" htmlFor='isOptional'>Is Optional?</label>
+          <input className='w-1/1 scale-200' id='isOptional' type='checkbox' name='isOptional' checked={activity?.isOptional} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} />
+
+          {/* <label className = "block text-xl mt-2 text-center" htmlFor='tags'>Enter tags, separated by commas</label>
+          <textarea onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTags(e.target.value)} value={tags} name='tags' id='tags' className="block px-4 py-2 mt-2 border w-1/1"/> */}
+
           {/* <label className = "block text-xl mt-2 text-center" htmlFor='skills'>Enter skills, separated by commas</label>
           <textarea onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChangeArrayHandler(e,'skills')} value={activity.skills.map(skill => skill.name).join(',')} name='skills' id='skills' className="block px-4 py-2 mt-2 border w-1/1"/>    */}
 
 
-          <h3 className='block text-xl mt-2'>Applicable Formats (Choose At Least One):</h3>
-          <div className='text-2xl flex justify-around'>
+          <label className="block text-xl mt-2" htmlFor='github-repository-url'>GitHub Repository URL (If Applicable)</label>
+          <input onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} value={activity.githubRepositoryUrl} type='text' name='githubRepositoryUrl' id='github-repository-url' className="block px-4 py-2 mt-2 border
+            border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
+             focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
-            <div>
-              <label className = 'mr-2' htmlFor="ILT">ILT</label>
-              <input className = 'scale-150' id="ILT" checked={activity?.isILT} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} type='checkbox' name='isILT' />
-            </div>
+          <label className="block text-xl mt-2" htmlFor='vscode-extension-url'>VS Code Extension URL (If Applicable)</label>
+          <input onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} value={activity.vsCodeExtensionUrl} type='text' name='vsCodeExtensionUrl' id='vscode-extension-url' className="block px-4 py-2 mt-2 border
+            border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
+             focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
-            <div>
-              <label className = 'mr-2' htmlFor="IST">IST</label>
-              <input className = 'scale-150' id="IST" checked={activity?.isIST} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} type='checkbox' name='isIST' />
-            </div>
+          <label className="block text-xl mt-2" htmlFor='max-score'>Max Score (If Applicable)</label>
+          <input onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} value={activity.maxScore} type='number' name='maxScore' id='max-score' className="block px-4 py-2 mt-2 border
+            border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 
+             focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
-            <div>
-              <label className = 'mr-2' htmlFor="PLT">PLT</label>
-              <input className = 'scale-150' id="PLT" checked={activity?.isPLT} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeCheckboxHandler(e)} type='checkbox' name='isPLT' />
-            </div>
-
-          </div>
+             <ArtifactAttachmentForm activity={activity} setActivity={setActivity}></ArtifactAttachmentForm>
 
 
           <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 
