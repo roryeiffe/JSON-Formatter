@@ -4,6 +4,7 @@ import { Activity, AddActivityProps, ArtifactAttachment } from "../types";
 import '../styles/AddActivity.css';
 import { IDsGenerator } from "../utils/IDsGenerator";
 import ArtifactAttachmentForm from "./form-components/ArtifactAttachmentForm";
+import URLAttachmentForm from "./form-components/URLAttachmentForm";
 
 const commonPLTTypes = ['ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT0042', 'ACT005', 'ACT0061', 'ACT0062', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'ACT012', 'ACT013']
 const commonILTTypes = ['ACT001', 'ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT005', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'Project -> Kick Off']
@@ -34,6 +35,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
     githubRepositoryUrl: '',
     vsCodeExtensionUrl: '',
     artifactAttachments: [],
+    urlAttachments: [],
     isILT: true,
     isIST: false,
     isPLT: false,
@@ -213,6 +215,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
              <ArtifactAttachmentForm activity={activity} setActivity={setActivity}></ArtifactAttachmentForm>
+             <URLAttachmentForm activity={activity} setActivity={setActivity}></URLAttachmentForm>
 
 
           <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 

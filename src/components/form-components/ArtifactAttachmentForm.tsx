@@ -84,7 +84,7 @@ function ArtifactAttachmentForm({activity, setActivity}:ArtifactAttachmentProps)
             <div key={artifactItem.name} className="max-w-lg my-7 mx-auto p-6 bg-white rounded-lg shadow-md">
               <div className = "flex items-center justify-between">
                 <h2 className="text-xl font-semibold">{artifactItem.name}</h2>
-                <button onClick={() => deleteHandler(artifactItem.name)} className="text-red-500 hover:text-red-700 ml-2 cursor-pointer">Delete</button>
+                <button onClick={() => deleteHandler(artifactItem.name)} className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition duration-300">Delete</button>
               </div>
               <p>{artifactItem.description}</p>
               <p>File URL: {artifactItem.fileUrl}</p>

@@ -18,6 +18,8 @@ type ArtifactAttachmentProps = {
   setActivity: (activity: Activity) => void,
 }
 
+type URLAttachmentFormProps = ArtifactAttachmentProps;
+
 // Taxonomy Types (Activities, Topics, Modules, Units):
 
 type Tag = {
@@ -53,6 +55,7 @@ type Activity = {
   githubRepositoryUrl?: string,
   vsCodeExtensionUrl?: string,
   artifactAttachments: ArtifactAttachment[],
+  urlAttachments: URLAttachment[],
   isILT?: boolean,
   isIST?: boolean,
   isPLT?: boolean,
@@ -129,5 +132,12 @@ type ArtifactAttachment = {
   fileSize: string
 }
 
+type URLAttachment = {
+  name: string,
+  description: string,
+  url: string,
+  tutorials: boolean
+}
 
-export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity, ArtifactAttachment, ArtifactAttachmentProps}
+
+export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity, ArtifactAttachment, ArtifactAttachmentProps, URLAttachment, URLAttachmentFormProps}

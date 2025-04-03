@@ -37,9 +37,10 @@ const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisite
 
         // Check if this is an activity item (e.g., based on a type field)
         const isActivity = target.hasOwnProperty("activityId");
+        const isURLAttachment = target.hasOwnProperty("tutorials");
 
-        // Exclude "description" only if it's NOT an activity item
-        if (typeof prop === 'string' && excludeKeys.includes(prop) && !(isActivity && prop === "description")) {
+        // Exclude "description" only if it's NOT an activity item OR a urlAttachment item
+        if (typeof prop === 'string' && excludeKeys.includes(prop) && !(isActivity && prop === "description") && !(isURLAttachment && (prop === "description" || prop === "url"))) {
           return undefined;
         }
         return typeof value === "object" && value !== null
