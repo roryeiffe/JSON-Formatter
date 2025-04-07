@@ -20,6 +20,9 @@ type ArtifactAttachmentProps = {
 
 type URLAttachmentFormProps = ArtifactAttachmentProps;
 
+type TagFormProps = ArtifactAttachmentProps;
+type SkillFormProps = ArtifactAttachmentProps;
+
 // Taxonomy Types (Activities, Topics, Modules, Units):
 
 type Tag = {
@@ -140,4 +143,4 @@ type URLAttachment = {
 }
 
 
-export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity, ArtifactAttachment, ArtifactAttachmentProps, URLAttachment, URLAttachmentFormProps}
+export {Unit, Module, Topic, Activity, Prerequisites, AppProps, AddActivityProps, HierarchyItem, HierarchyType, UnitActivity, ModuleActivity, TopicActivity, ArtifactAttachment, ArtifactAttachmentProps, URLAttachment, URLAttachmentFormProps, TagFormProps, Tag, SkillFormProps}

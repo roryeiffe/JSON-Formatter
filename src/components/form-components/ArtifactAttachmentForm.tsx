@@ -51,27 +51,27 @@ function ArtifactAttachmentForm({activity, setActivity}:ArtifactAttachmentProps)
         <h3 className='text-2xl text-center'>Add Artifact Attachment</h3>
 
         <label htmlFor="artifact-name" className="block text-xl mt-2">Artifact Name*</label>
-        <input required id="artifact-name" type="text" className="block px-4 py-2 mt-2 border
+        <input id="artifact-name" type="text" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" name='name' value={artifact?.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
         <label htmlFor="artifact-description" className="block text-xl mt-2">Artifact Description*</label>
-        <textarea required id="artifact-description" className="block px-4 py-2 mt-2 border
+        <textarea id="artifact-description" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-full" name='description' value={artifact?.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChangeHandler(e)} />
 
         <label htmlFor="artifact-file-url" className="block text-xl mt-2">Artifact File URL*</label>
-        <input required id="artifact-file-url" type="text" className="block px-4 py-2 mt-2 border
+        <input id="artifact-file-url" type="text" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-full" name='fileUrl' value={artifact?.fileUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
         <label htmlFor="artifact-file-name" className="block text-xl mt-2">Artifact File Name*</label>
-        <input required id="artifact-file-name" type="text" className="block px-4 py-2 mt-2 border
+        <input id="artifact-file-name" type="text" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-full" name='fileName' value={artifact?.fileName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
         <label htmlFor="artifact-file-size" className="block text-xl mt-2">Artifact File Size*</label>
-        <input required id="artifact-file-size" type="text" className="block px-4 py-2 mt-2 border
+        <input id="artifact-file-size" type="text" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-full" name='fileSize' value={artifact?.fileSize} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 

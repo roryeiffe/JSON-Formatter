@@ -5,6 +5,8 @@ import '../styles/AddActivity.css';
 import { IDsGenerator } from "../utils/IDsGenerator";
 import ArtifactAttachmentForm from "./form-components/ArtifactAttachmentForm";
 import URLAttachmentForm from "./form-components/URLAttachmentForm";
+import TagForm from "./form-components/TagForm";
+import SkillForm from "./form-components/SkillForm";
 
 const commonPLTTypes = ['ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT0042', 'ACT005', 'ACT0061', 'ACT0062', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'ACT012', 'ACT013']
 const commonILTTypes = ['ACT001', 'ACT002', 'ACT003', 'ACT004', 'ACT0041', 'ACT005', 'ACT0063', 'ACT007', 'ACT0081', 'ACT0082', 'ACT0083', 'ACT009', 'Project -> Kick Off']
@@ -42,7 +44,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
   });
 
   useEffect(() => {
-    if(activityProp) {
+    if (activityProp) {
       console.log(activityProp)
       setActivity(activityProp);
     }
@@ -83,6 +85,13 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
       alert('Need to choose at least one training format (ILT, IST, PST)')
       return;
     }
+    for (const tag of activity.tags) {
+      tag.id = await IDsGenerator(tag.name);
+    }
+    for (const skill of activity.skills) {
+      skill.id = await IDsGenerator(skill.name);
+    }
+
 
     if (!hierarchyItem.hierarchyType) return;
     if (!updateMode) {
@@ -214,8 +223,10 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
-             <ArtifactAttachmentForm activity={activity} setActivity={setActivity}></ArtifactAttachmentForm>
-             <URLAttachmentForm activity={activity} setActivity={setActivity}></URLAttachmentForm>
+          <ArtifactAttachmentForm activity={activity} setActivity={setActivity}></ArtifactAttachmentForm>
+          <URLAttachmentForm activity={activity} setActivity={setActivity}></URLAttachmentForm>
+          <TagForm activity={activity} setActivity={setActivity}></TagForm>
+          <SkillForm activity={activity} setActivity={setActivity}></SkillForm>
 
 
           <button className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 

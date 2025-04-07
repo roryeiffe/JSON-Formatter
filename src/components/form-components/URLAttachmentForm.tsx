@@ -21,6 +21,13 @@ function URLAttachmentForm({ activity, setActivity }: URLAttachmentFormProps) {
     })
   }
 
+  const onCheckboxChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    setUrlAttachment({
+      ...urlAttachment,
+      [event.target.name]: event.target.checked
+    })
+  }
+
   const onAddHandler = (event: any) => {
     event.preventDefault();
     console.log(urlAttachment);
@@ -51,20 +58,20 @@ function URLAttachmentForm({ activity, setActivity }: URLAttachmentFormProps) {
 
 
         <label htmlFor="url-name" className="block text-xl mt-2">URL Name*</label>
-        <input required id="url-name" type="text" className="block px-4 py-2 mt-2 border
+        <input id="url-name" type="text" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
           focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" name='name' value={urlAttachment?.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
         <label htmlFor="url-description" className="block text-xl mt-2">URL Description*</label>
-        <textarea required id="url-description" className="block px-4 py-2 mt-2 border
+        <textarea id="url-description" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2" rows={4} name='description' value={urlAttachment?.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChangeHandler(e)} />
 
         <label htmlFor="url-url" className="block text-xl mt-2">URL*</label>
-        <input required id="url-url" type="text" className="block px-4 py-2 mt-2 border
+        <input id="url-url" type="text" className="block px-4 py-2 mt-2 border
         border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2" name='url' value={urlAttachment?.url} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
 
         <label htmlFor="url-tutorials" className="block text-xl mt-2">Is this a tutorial?*</label>
-        <input required id="url-tutorials" type="checkbox" className="block mt-2" name='tutorials' checked={urlAttachment?.tutorials} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} />
+        <input id="url-tutorials" type="checkbox" className="block mt-2" name='tutorials' checked={urlAttachment?.tutorials} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onCheckboxChangeHandler(e)} />
 
 
         <button onClick={(e) => onAddHandler(e)} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-600 transition duration-300">Add URL Attachment</button>

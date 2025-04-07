@@ -22,7 +22,7 @@ const checkActivityExists = (activityToAdd: Activity, activities: Activity[]) =>
 }
 
 // Create simplified version of the data, removing unnecessary ids, etc.
-const createFilteredProxy: any = (data: Unit, excludeKeys = ["id", "prerequisites", 'description', "tooltip", "url"]) => {
+const createFilteredProxy: any = (data: Unit, excludeKeys = ["prerequisites", 'description', "tooltip", "url"]) => {
   if (Array.isArray(data)) {
     return data.map(item => createFilteredProxy(item, excludeKeys));
   } else if (typeof data === "object" && data !== null) {
