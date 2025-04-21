@@ -98,11 +98,11 @@ function UnitDisplay() {
   const uploadJSONHandler = (data: string) => {
     const dataParsed = JSON.parse(data);
 
-    dataParsed.unitActivities = [];
+    dataParsed.unitActivities ??= [];
     for (let i = 0; i < dataParsed.modules.length; i++) {
-      dataParsed.modules[i].moduleActivities = [];
+      dataParsed.modules[i].moduleActivities ??= [];
       for (let j = 0; j < dataParsed.modules[i].topics.length; j++) {
-        dataParsed.modules[i].topics[j].topicActivities = [];
+        dataParsed.modules[i].topics[j].topicActivities ??= [];
       }
     }
 
@@ -115,7 +115,7 @@ function UnitDisplay() {
     setCurrentEdit(currentEdit_);
     setUpdateMode(updateMode_);
     console.log(activity);
-    if(activity) setActivityFocused(activity);
+    if (activity) setActivityFocused(activity);
 
   }
 
@@ -216,6 +216,17 @@ function UnitDisplay() {
   }
 
 
+  const downloadNavigation = () => {  
+    if (!unitTaxonomy) return;
+    const fileData = JSON.stringify(unitTaxonomy);
+    // create a blob and remove all unnecessary fields
+    const blob = new Blob([createFilteredProxy(fileData)], { type: 'text/json' });
+    const url = URL.createObjectURL(blob);
+    const linkElement = document.createElement('a');
+    linkElement.download = `${unitTaxonomy?.title}-taxonomy.json`;
+    linkElement.href = url;
+    linkElement.click();
+  }
 
   // Call the downloadTaxonomy functions for each format (ILT, PLT, IST)
   const downloadTaxonomyAllFormats = () => {
@@ -346,12 +357,18 @@ function UnitDisplay() {
             text-white font-semibold rounded-lg shadow-lg transform text-center
             transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto 
             focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer"
-
-
-
           >Download (3 Files)</button>
 
-          <pre className="bg-white-800  m-auto text-blue-950 p-6 rounded-lg shadow-xl font-mono text-sm whitespace-pre-wrap ">
+
+          <button
+            onClick={downloadNavigation}
+            className="block  py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 
+            text-white font-semibold rounded-lg shadow-lg transform text-center
+            transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto 
+            focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer"
+          >Save Your Work</button>
+
+          <pre className="bg-white-800 m-auto text-blue-950 p-6 rounded-lg shadow-xl font-mono text-sm whitespace-pre-wrap ">
             {JSON.stringify(previewData, null, 2)}
           </pre>
 
