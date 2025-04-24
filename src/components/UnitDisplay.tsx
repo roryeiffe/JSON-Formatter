@@ -223,7 +223,7 @@ function UnitDisplay() {
     const blob = new Blob([createFilteredProxy(fileData)], { type: 'text/json' });
     const url = URL.createObjectURL(blob);
     const linkElement = document.createElement('a');
-    linkElement.download = `${unitTaxonomy?.title}-taxonomy.json`;
+    linkElement.download = `${unitTaxonomy?.title}-saved.json`;
     linkElement.href = url;
     linkElement.click();
   }
@@ -271,7 +271,7 @@ function UnitDisplay() {
 
     // Topic Level
     for (let i = 0; i < data.modules.length; i++) {
-      for (let j = 0; j < data.modules.length; j++) {
+      for (let j = 0; j < data.modules[i].topics.length; j++) {
         data.modules[i].topics[j].topicActivities = data.modules[i].topics[j].topicActivities?.filter(activity => activity[key])
       }
     }
