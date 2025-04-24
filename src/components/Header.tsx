@@ -10,6 +10,10 @@ export const Header: React.FC = () => {
         <Link className="text-3xl font-bold text-left mx-4 cursor-pointer hover:bg-blue-700 p-2" to = '/activities'>
           Activity Creation
         </Link>  
+        <Link className="text-3xl font-bold text-left mx-4 cursor-pointer hover:bg-blue-700 p-2" to = '/excel'>
+          Excel Uploader  
+        </Link>
+
 
       </div>
     </header>

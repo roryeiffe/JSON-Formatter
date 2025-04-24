@@ -5,7 +5,7 @@ import { AppProps } from './types';
 import { Route, Routes } from 'react-router-dom';
 import GenerateJSON from './pages/GenerateJSONPage';
 import GenerateActivitiesPage from './pages/GenerateActivitiesPage';
-import ArtifactAttachmentForm from './components/form-components/ArtifactAttachmentForm';
+import ExcelUploader from './components/ExcelUploader';
 
 const App = ({ onClick, text }: AppProps) => {
 
@@ -17,6 +17,7 @@ const App = ({ onClick, text }: AppProps) => {
         <Routes>
           <Route path="/" Component={GenerateJSON} />
           <Route path="/activities" Component={GenerateActivitiesPage} />
+          <Route path="/excel" Component={ExcelUploader} />
         </Routes>
     </>
   )
