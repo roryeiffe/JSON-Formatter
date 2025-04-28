@@ -6,6 +6,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
 import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
+import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -60,12 +61,10 @@ const ExcelUploader: React.FC = () => {
 
       // 
       const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
-      const save_file = await addActivityFields(structuredClone(parsedTaxonomy));
+      const format_files = await addActivityFields(structuredClone(parsedTaxonomy));
 
       // download the artifacts:
-      // await downloadFile(`${unitName}.json`, navigation_json);
-      // await downloadFile(`${unitName}-save.json`, save_file);
-      // generateZipStructure(parsedTaxonomy, unitName);
+      generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json);
     };
 
     reader.readAsBinaryString(file);
@@ -149,12 +148,12 @@ const ExcelUploader: React.FC = () => {
   
 
 
-  const generateZipStructure = async (navigation_json: any, unitName: string) => {
+  const generateZipStructure = async (unit: any, unitName: string, format_files:any, navigation_json:any) => {
     const zip = new JSZip();
     const rootFolder = zip.folder(unitName || 'unit');
     const moduleContainerFolder = rootFolder?.folder('modules');
 
-    for (const module of navigation_json.modules) {
+    for (const module of unit.modules) {
       const moduleFolder = moduleContainerFolder?.folder(String(module.moduleCount).padStart(3, '0') + '-' + module.title);
 
       for (const topic of module.topics) {
@@ -179,12 +178,17 @@ const ExcelUploader: React.FC = () => {
 
     }
 
-    for (const activity of navigation_json.unitActivities) {
+    for (const activity of unit.unitActivities) {
       const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
         'Activity URL: ' + activity.activityURL + '\n' +
         'Activity Description: ';
       rootFolder?.file(`${activity.activityName}.md`, fileContent);
     }
+
+    rootFolder?.file(`${unit.title}.json`, JSON.stringify(navigation_json, null, 2));
+    rootFolder?.file(`${unit.title}-taxonomy-ILT.json`, JSON.stringify(format_files.ILTFormatFile, null, 2));
+    rootFolder?.file(`${unit.title}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
+    rootFolder?.file(`${unit.title}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
 
     // Generate and trigger download
     const content = await zip.generateAsync({ type: 'blob' });
@@ -273,9 +277,9 @@ const ExcelUploader: React.FC = () => {
       }
     }
 
-    console.log("save_file", save_file);
+    downloadFile('Use-This-To-Update-Activites.json', save_file);
 
-    return save_file;
+    return downloadTaxonomyAllFormats(save_file);
   };
 
   return (
