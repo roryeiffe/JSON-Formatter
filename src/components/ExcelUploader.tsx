@@ -5,6 +5,7 @@ import { Activity, UnitActivity } from '../types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
+import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -59,27 +60,18 @@ const ExcelUploader: React.FC = () => {
 
       // 
       const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
-      const save_file = await addActivityFields(structuredClone(parsedTaxonomy));;
+      const save_file = await addActivityFields(structuredClone(parsedTaxonomy));
 
       // download the artifacts:
-      await downloadFile(`${unitName}.json`, navigation_json);
-      await downloadFile(`${unitName}-save.json`, save_file);
-      generateZipStructure(parsedTaxonomy, unitName);
+      // await downloadFile(`${unitName}.json`, navigation_json);
+      // await downloadFile(`${unitName}-save.json`, save_file);
+      // generateZipStructure(parsedTaxonomy, unitName);
     };
 
     reader.readAsBinaryString(file);
   };
 
   const parseTaxonomyExcel = async (raw_json: any[], fileName: string) => {
-    let moduleCount = 0;
-    let topicCount = 0;
-
-    let lastModuleTitle = '';
-    let lastTopicTitle = '';
-
-    let currentModule: any = null;
-    let currentTopic: any = null;
-
     const unit: any = {
       modules: [],
       unitActivities: [],
@@ -87,59 +79,49 @@ const ExcelUploader: React.FC = () => {
       title: fileName,
       description: '',
     };
-
+  
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
       const topicTitle = row.Topic?.trim();
-
-      // Check and add module if it's new and valid
-      if (moduleTitle && moduleTitle !== "N/A" && moduleTitle !== lastModuleTitle) {
-        // If we had a previous topic, push it into the previous module before resetting
-        if (currentTopic && currentModule) {
-          currentModule.topics.push(currentTopic);
-          currentTopic = null;
-        }
-
-        // If there's an existing module, push it to the unit before creating a new one
-        if (currentModule) {
+  
+      let currentModule = null;
+      let currentTopic = null;
+  
+      // === 1. Find or create the Module ===
+      if (moduleTitle && moduleTitle !== "N/A") {
+        currentModule = unit.modules.find((mod: any) => mod.title === moduleTitle);
+        
+        if (!currentModule) {
+          currentModule = {
+            id: await IDsGenerator(moduleTitle),
+            title: moduleTitle,
+            description: '',
+            topics: [],
+            moduleActivities: [],
+          };
           unit.modules.push(currentModule);
         }
-
-        currentModule = {
-          id: await IDsGenerator(moduleTitle),
-          moduleCount: ++moduleCount,
-          title: moduleTitle,
-          description: '',
-          topics: [],
-          moduleActivities: [],
-        };
-
-        topicCount = 0; // Reset topic count for the new module
-        lastModuleTitle = moduleTitle;
-        lastTopicTitle = '';
       }
-
-      // Check and add topic if it's new and valid
-      if (topicTitle && topicTitle !== "N/A" && topicTitle !== lastTopicTitle) {
-        if (currentTopic && currentModule) {
+  
+      // === 2. Find or create the Topic inside the Module ===
+      if (topicTitle && topicTitle !== "N/A" && currentModule) {
+        currentTopic = currentModule.topics.find((top: any) => top.title === topicTitle);
+        
+        if (!currentTopic) {
+          currentTopic = {
+            id: await IDsGenerator(topicTitle),
+            title: topicTitle,
+            description: '',
+            topicActivities: [],
+          };
           currentModule.topics.push(currentTopic);
         }
-
-        currentTopic = {
-          id: await IDsGenerator(topicTitle),
-          topicCount: ++topicCount,
-          title: topicTitle,
-          description: '',
-          topicActivities: [],
-        };
-
-        lastTopicTitle = topicTitle;
       }
-
-      // Parse and assign activities
+  
+      // === 3. Parse the Activity ===
       const activityName = row["Activity Name"]?.trim();
       if (!activityName) continue;
-
+  
       const activity: any = {
         ...EMPTY_ACTIVITY,
         activityId: await IDsGenerator(activityName),
@@ -150,7 +132,8 @@ const ExcelUploader: React.FC = () => {
         duration: row["Duration"],
         isReview: row["Activity Grouping"]?.trim() === "Review",
       };
-
+  
+      // === 4. Assign Activity based on Scope ===
       const scope = row["Activity Scope"]?.trim();
       if (scope === 'Unit') {
         unit.unitActivities.push(activity);
@@ -160,17 +143,10 @@ const ExcelUploader: React.FC = () => {
         currentTopic.topicActivities.push(activity);
       }
     }
-
-    // Push final topic and module
-    if (currentTopic && currentModule) {
-      currentModule.topics.push(currentTopic);
-    }
-    if (currentModule) {
-      unit.modules.push(currentModule);
-    }
-
+  
     return unit;
   };
+  
 
 
   const generateZipStructure = async (navigation_json: any, unitName: string) => {
@@ -253,14 +229,11 @@ const ExcelUploader: React.FC = () => {
       }
     }
 
-
-
     return navigation_json;
   };
 
 
   const addActivityFields = async (parsedTaxonomy: any) => {
-    console.log('parsedTaxonomy', parsedTaxonomy);
     let save_file = structuredClone(parsedTaxonomy);
 
     // unit:
@@ -269,6 +242,7 @@ const ExcelUploader: React.FC = () => {
       activity.activityPath = './' + activity.activityName + '.md';
       activity.type = getActivityCode(activity.activityType);
       setFormatBooleans(activity);
+      updateActivityDescriptionAndInstructions(activity, save_file.title);
     }
     //modules:
     for (const module of save_file.modules) {
@@ -277,6 +251,7 @@ const ExcelUploader: React.FC = () => {
         activity.activityPath = './modules/' + String(module.moduleCount).padStart(3, '0') + '-' + module.title + '/' + activity.activityName + '.md';
         activity.type = getActivityCode(activity.activityType);
         setFormatBooleans(activity);
+        updateActivityDescriptionAndInstructions(activity, save_file.title);
       }
       //topics:
       for (const topic of module.topics) {
@@ -284,7 +259,8 @@ const ExcelUploader: React.FC = () => {
         for (const activity of topic.topicActivities) {
           activity.activityPath = './modules/' + String(module.moduleCount).padStart(3, '0') + '-' + module.title + '/' + String(topic.topicCount).padStart(3, '0') + '-' + topic.title + '/' + activity.activityName + '.md';
           activity.type = getActivityCode(activity.activityType);
-          setFormatBooleans(activity)
+          setFormatBooleans(activity);
+          updateActivityDescriptionAndInstructions(activity, save_file.title);
         }
       }
     }
@@ -297,7 +273,7 @@ const ExcelUploader: React.FC = () => {
       }
     }
 
-    console.log('save_file', save_file);
+    console.log("save_file", save_file);
 
     return save_file;
   };
