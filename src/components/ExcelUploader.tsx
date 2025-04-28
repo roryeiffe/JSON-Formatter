@@ -223,7 +223,13 @@ const ExcelUploader: React.FC = () => {
     // Exit Criteria:
     for (const row of exit_criteria_json) {
       const exitCriteriaTitle = row["Exit Criteria"]?.trim();
-      navigation_json.exitCriteria.push(exitCriteriaTitle);
+      const difficulty = row["Criteria Difficulty"]?.trim();
+      const assessmentApproach = row["Assessment Approach"]?.trim();
+      navigation_json.exitCriteria.push({
+        title: exitCriteriaTitle,
+        difficulty,
+        assessmentApproach,
+      });
     }
 
     // Metadata:
