@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { act, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { IDsGenerator } from '../utils/IDsGenerator';
 import { Activity, UnitActivity } from '../types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { getActivityCode, setFormatBooleans } from '../utils/activityCodes';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -37,93 +38,59 @@ const ExcelUploader: React.FC = () => {
       const binaryStr = e.target?.result;
       if (!binaryStr) return;
 
+      // get sheets:
       const workbook = XLSX.read(binaryStr, { type: 'binary' });
       const taxonomySheet = workbook.Sheets['Taxonomy'];
       const exitCriteriaSheet = workbook.Sheets['Exit Criteria'];
       const metadataSheet = workbook.Sheets['Metadata'];
 
+      const unitName = file.name.substring(0, file.name.lastIndexOf('.'));
+
+
+      // parse into JSON:
       const taxonomyJson = XLSX.utils.sheet_to_json<ParsedRow>(taxonomySheet);
       const exitCriteriaJson = XLSX.utils.sheet_to_json<ParsedRow>(exitCriteriaSheet);
       const metadataJson = XLSX.utils.sheet_to_json<ParsedRow>(metadataSheet, { range: 1 });
-      const navigation_json = await generate_navigation_json(taxonomyJson, exitCriteriaJson, metadataJson, file.name);
-      const navigation_json_with_activities = await addActivitiesToNavigationJson(structuredClone(navigation_json), taxonomyJson);
 
-      const unitName = file.name.substring(0, file.name.lastIndexOf('.'));
+
+      // convert the Excel data to JSON, which will be used to generate the navigation JSON, the zip structure, and the save JSON
+      const parsedTaxonomy = await parseTaxonomyExcel(taxonomyJson, unitName);
+
+      // 
+      const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
+      const save_file = await addActivityFields(structuredClone(parsedTaxonomy));;
+
+      // download the artifacts:
       await downloadFile(`${unitName}.json`, navigation_json);
-      await downloadFile(`${unitName}-save.json`, navigation_json_with_activities);
-
-      const parsedExcel = await parseExcel(taxonomyJson);
-
-      generateZipStructure(parsedExcel, unitName);
-      
-
+      await downloadFile(`${unitName}-save.json`, save_file);
+      generateZipStructure(parsedTaxonomy, unitName);
     };
 
     reader.readAsBinaryString(file);
   };
 
-  const generateZipStructure = async (navigation_json: any, unitName: string) => {
-    const zip = new JSZip();
-    const rootFolder = zip.folder(unitName || 'unit');
-    const moduleContainerFolder = rootFolder?.folder('modules');
-  
-    for (const module of navigation_json.modules) {
-      const moduleFolder = moduleContainerFolder?.folder(String(module.moduleCount).padStart(3, '0') + '-' + module.title);
-  
-      for (const topic of module.topics) {
-        const topicFolder = moduleFolder?.folder(String(topic.topicCount).padStart(3, '0') + '-' + topic.title);
-  
-        for(const activity of topic.activities) {
-          const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
-            'Activity URL: ' + activity.activityURL + '\n' +
-            'Activity Description: ';
-          topicFolder?.file(`${activity.activityName}.md`, fileContent);
-        }
-  
-      }
-
-      for(const activity of module.activities) {
-        const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
-          'Activity URL: ' + activity.activityURL + '\n' +
-          'Activity Description: ';
-        moduleFolder?.file(`${activity.activityName}.md`, fileContent);
-      }
-  
-      
-    }
-
-    for(const activity of navigation_json.activities) {
-      const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
-        'Activity URL: ' + activity.activityURL + '\n' +
-        'Activity Description: ';
-      rootFolder?.file(`${activity.activityName}.md`, fileContent);
-    }
-  
-    // Generate and trigger download
-    const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `${navigation_json.title || 'unit'}.zip`);
-  };
-
-
-  const parseExcel = async (raw_json: any[]) => {
+  const parseTaxonomyExcel = async (raw_json: any[], fileName: string) => {
     let moduleCount = 0;
     let topicCount = 0;
 
     let lastModuleTitle = '';
     let lastTopicTitle = '';
-  
+
     let currentModule: any = null;
     let currentTopic: any = null;
-  
+
     const unit: any = {
       modules: [],
-      activities: [],
+      unitActivities: [],
+      id: await IDsGenerator(fileName),
+      title: fileName,
+      description: '',
     };
-  
+
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
       const topicTitle = row.Topic?.trim();
-  
+
       // Check and add module if it's new and valid
       if (moduleTitle && moduleTitle !== "N/A" && moduleTitle !== lastModuleTitle) {
         // If we had a previous topic, push it into the previous module before resetting
@@ -131,47 +98,47 @@ const ExcelUploader: React.FC = () => {
           currentModule.topics.push(currentTopic);
           currentTopic = null;
         }
-  
+
         // If there's an existing module, push it to the unit before creating a new one
         if (currentModule) {
           unit.modules.push(currentModule);
         }
-  
+
         currentModule = {
           id: await IDsGenerator(moduleTitle),
           moduleCount: ++moduleCount,
           title: moduleTitle,
           description: '',
           topics: [],
-          activities: [],
+          moduleActivities: [],
         };
-  
+
         topicCount = 0; // Reset topic count for the new module
         lastModuleTitle = moduleTitle;
         lastTopicTitle = '';
       }
-  
+
       // Check and add topic if it's new and valid
       if (topicTitle && topicTitle !== "N/A" && topicTitle !== lastTopicTitle) {
         if (currentTopic && currentModule) {
           currentModule.topics.push(currentTopic);
         }
-  
+
         currentTopic = {
           id: await IDsGenerator(topicTitle),
           topicCount: ++topicCount,
           title: topicTitle,
           description: '',
-          activities: [],
+          topicActivities: [],
         };
-  
+
         lastTopicTitle = topicTitle;
       }
-  
+
       // Parse and assign activities
       const activityName = row["Activity Name"]?.trim();
       if (!activityName) continue;
-  
+
       const activity: any = {
         ...EMPTY_ACTIVITY,
         activityId: await IDsGenerator(activityName),
@@ -182,17 +149,17 @@ const ExcelUploader: React.FC = () => {
         duration: row["Duration"],
         isReview: row["Activity Grouping"]?.trim() === "Review",
       };
-  
+
       const scope = row["Activity Scope"]?.trim();
       if (scope === 'Unit') {
-        unit.activities.push(activity);
+        unit.unitActivities.push(activity);
       } else if (scope === 'Module' && currentModule) {
-        currentModule.activities.push(activity);
+        currentModule.moduleActivities.push(activity);
       } else if (scope === 'Topic' && currentTopic) {
-        currentTopic.activities.push(activity);
+        currentTopic.topicActivities.push(activity);
       }
     }
-  
+
     // Push final topic and module
     if (currentTopic && currentModule) {
       currentModule.topics.push(currentTopic);
@@ -200,25 +167,61 @@ const ExcelUploader: React.FC = () => {
     if (currentModule) {
       unit.modules.push(currentModule);
     }
-  
+
     return unit;
   };
-  
 
-  const generate_navigation_json = async (raw_json: any[], exit_criteria_json: any[], metadata_json: any[], fileName: string) => {
-    const navigation_json: any = {
-      id: await IDsGenerator(fileName),
-      title: fileName,
-      description: '',
-      modules: [],
+
+  const generateZipStructure = async (navigation_json: any, unitName: string) => {
+    const zip = new JSZip();
+    const rootFolder = zip.folder(unitName || 'unit');
+    const moduleContainerFolder = rootFolder?.folder('modules');
+
+    for (const module of navigation_json.modules) {
+      const moduleFolder = moduleContainerFolder?.folder(String(module.moduleCount).padStart(3, '0') + '-' + module.title);
+
+      for (const topic of module.topics) {
+        const topicFolder = moduleFolder?.folder(String(topic.topicCount).padStart(3, '0') + '-' + topic.title);
+
+        for (const activity of topic.topicActivities) {
+          const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
+            'Activity URL: ' + activity.activityURL + '\n' +
+            'Activity Description: ';
+          topicFolder?.file(`${activity.activityName}.md`, fileContent);
+        }
+
+      }
+
+      for (const activity of module.moduleActivities) {
+        const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
+          'Activity URL: ' + activity.activityURL + '\n' +
+          'Activity Description: ';
+        moduleFolder?.file(`${activity.activityName}.md`, fileContent);
+      }
+
+
+    }
+
+    for (const activity of navigation_json.unitActivities) {
+      const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
+        'Activity URL: ' + activity.activityURL + '\n' +
+        'Activity Description: ';
+      rootFolder?.file(`${activity.activityName}.md`, fileContent);
+    }
+
+    // Generate and trigger download
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `${navigation_json.title || 'unit'}.zip`);
+  };
+
+  const generate_navigation_json = async (parsedExcel: any, exit_criteria_json: any[], metadata_json: any[], fileName: string) => {
+    let navigation_json: any = structuredClone(parsedExcel);
+    navigation_json = {
+      ...navigation_json,
       exitCriteria: [],
       tags: [],
       skills: []
-    };
-
-    let lastModuleTitle = '';
-    let lastTopicTitle = '';
-    let currentModule: any = null;
+    }
 
     // Exit Criteria:
     for (const row of exit_criteria_json) {
@@ -239,104 +242,64 @@ const ExcelUploader: React.FC = () => {
     }
 
     // Navigation JSON:
-    for (const row of raw_json) {
-      const moduleTitle = row.Module?.trim();
-      const topicTitle = row.Topic?.trim();
-
-      // Add new module if it's different and valid
-      if (moduleTitle && moduleTitle !== "N/A" && moduleTitle !== lastModuleTitle) {
-        currentModule = {
-          id: await IDsGenerator(moduleTitle),
-          title: moduleTitle,
-          description: '',
-          topics: [],
-        };
-        navigation_json.modules.push(currentModule);
-        lastModuleTitle = moduleTitle;
-        lastTopicTitle = ''; // Reset topic tracking when a new module starts
-      }
-
-      // Add new topic if it's different and valid
-      if (topicTitle && topicTitle !== "N/A" && topicTitle !== lastTopicTitle && currentModule) {
-        currentModule.topics.push({
-          id: await IDsGenerator(topicTitle),
-          title: topicTitle,
-          description: '',
-        });
-        lastTopicTitle = topicTitle;
-      }
-    }
-    return navigation_json;
-  };
-
-  const addActivitiesToNavigationJson = async (navigation_json: any, raw_json: any) => {
-    // Ensure unit-level activity array is initialized
-    navigation_json.unitActivities ??= [];
-
-    // Initialize module and topic activity arrays
+    delete navigation_json.unitActivities; // Remove activities from navigation_json to avoid duplication
     for (const module of navigation_json.modules) {
-      module.moduleActivities ??= []; // Fix: spelling was "moduleActivites"
+      delete module.moduleActivities; // Remove activities from each module
+      delete module.moduleCount; // Remove moduleCount from each module
       for (const topic of module.topics) {
-        topic.topicActivities ??= [];
+        delete topic.topicActivities; // Remove activities from each topic
+        delete topic.topicCount; // Remove topicCount from each topic
       }
     }
 
-    // Loop through the raw JSON data and add activities to the appropriate module or topic
-    for (const row of raw_json) {
-      const activityName = row["Activity Name"]?.trim();
-      if (!activityName) continue; // Skip invalid rows
 
-      const activity: any = {
-        ...EMPTY_ACTIVITY,
-        activityId: await IDsGenerator(activityName),
-        activityName,
-        activityURL: row["Content URL"],
-        activityType: row["Activity Type"],
-        type: 'HARDCODED VALUE',
-        duration: row["Duration"],
-        isReview: row["Activity Grouping"]?.trim() === "Review",
-      };
-
-      const scope = row["Activity Scope"]?.trim();
-      switch (scope) {
-        case 'Unit':
-          navigation_json.unitActivities.push({
-            ...activity,
-            unitId: navigation_json.id,
-          });
-          break;
-
-        case 'Module':
-          const moduleTitle = row["Module"]?.trim();
-          const module = navigation_json.modules.find((mod: any) => mod.title === moduleTitle);
-          if (module) {
-            module.moduleActivities.push({
-              ...activity,
-              moduleId: module.id,
-            });
-          }
-          break;
-        case 'Topic':
-          const topicTitle = row["Topic"]?.trim();
-          const moduleTitleForTopic = row["Module"]?.trim();
-          const moduleForTopic = navigation_json.modules.find((mod: any) => mod.title === moduleTitleForTopic);
-          if (moduleForTopic) {
-            const topic = moduleForTopic.topics.find((top: any) => top.title === topicTitle);
-            if (topic) {
-              topic.topicActivities.push({
-                ...activity,
-                topicId: topic.id,
-              });
-            }
-          }
-          break;
-      }
-    }
 
     return navigation_json;
   };
 
 
+  const addActivityFields = async (parsedTaxonomy: any) => {
+    console.log('parsedTaxonomy', parsedTaxonomy);
+    let save_file = structuredClone(parsedTaxonomy);
+
+    // unit:
+    delete save_file.description;
+    for (const activity of save_file.unitActivities) {
+      activity.activityPath = './' + activity.activityName + '.md';
+      activity.type = getActivityCode(activity.activityType);
+      setFormatBooleans(activity);
+    }
+    //modules:
+    for (const module of save_file.modules) {
+      delete module.description;
+      for (const activity of module.moduleActivities) {
+        activity.activityPath = './modules/' + String(module.moduleCount).padStart(3, '0') + '-' + module.title + '/' + activity.activityName + '.md';
+        activity.type = getActivityCode(activity.activityType);
+        setFormatBooleans(activity);
+      }
+      //topics:
+      for (const topic of module.topics) {
+        delete topic.description;
+        for (const activity of topic.topicActivities) {
+          activity.activityPath = './modules/' + String(module.moduleCount).padStart(3, '0') + '-' + module.title + '/' + String(topic.topicCount).padStart(3, '0') + '-' + topic.title + '/' + activity.activityName + '.md';
+          activity.type = getActivityCode(activity.activityType);
+          setFormatBooleans(activity)
+        }
+      }
+    }
+
+    // remove moduleCount and topicCount from the JSON:
+    for (const module of save_file.modules) {
+      delete module.moduleCount;
+      for (const topic of module.topics) {
+        delete topic.topicCount;
+      }
+    }
+
+    console.log('save_file', save_file);
+
+    return save_file;
+  };
 
   return (
     <div className="p-4 border rounded-md shadow-md max-w-xl mx-auto">
