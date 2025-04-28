@@ -153,18 +153,20 @@ const ExcelUploader: React.FC = () => {
     const rootFolder = zip.folder(unitName || 'unit');
     const moduleContainerFolder = rootFolder?.folder('modules');
 
+    let moduleCount = 1;
     for (const module of unit.modules) {
-      const moduleFolder = moduleContainerFolder?.folder(String(module.moduleCount).padStart(3, '0') + '-' + module.title);
+      const moduleFolder = moduleContainerFolder?.folder(String(moduleCount).padStart(3, '0') + '-' + module.title);
 
+      let topicCount = 1;
       for (const topic of module.topics) {
-        const topicFolder = moduleFolder?.folder(String(topic.topicCount).padStart(3, '0') + '-' + topic.title);
-
+        const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + topic.title);
         for (const activity of topic.topicActivities) {
           const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
             'Activity URL: ' + activity.activityURL + '\n' +
             'Activity Description: ';
           topicFolder?.file(`${activity.activityName}.md`, fileContent);
         }
+        topicCount++;
 
       }
 
@@ -174,6 +176,7 @@ const ExcelUploader: React.FC = () => {
           'Activity Description: ';
         moduleFolder?.file(`${activity.activityName}.md`, fileContent);
       }
+      moduleCount++; 
 
 
     }
@@ -226,10 +229,8 @@ const ExcelUploader: React.FC = () => {
     delete navigation_json.unitActivities; // Remove activities from navigation_json to avoid duplication
     for (const module of navigation_json.modules) {
       delete module.moduleActivities; // Remove activities from each module
-      delete module.moduleCount; // Remove moduleCount from each module
       for (const topic of module.topics) {
         delete topic.topicActivities; // Remove activities from each topic
-        delete topic.topicCount; // Remove topicCount from each topic
       }
     }
 
@@ -249,32 +250,28 @@ const ExcelUploader: React.FC = () => {
       updateActivityDescriptionAndInstructions(activity, save_file.title);
     }
     //modules:
+    let moduleCount = 1;
     for (const module of save_file.modules) {
       delete module.description;
       for (const activity of module.moduleActivities) {
-        activity.activityPath = './modules/' + String(module.moduleCount).padStart(3, '0') + '-' + module.title + '/' + activity.activityName + '.md';
+        activity.activityPath = './modules/' + String(moduleCount).padStart(3, '0') + '-' + module.title + '/' + activity.activityName + '.md';
         activity.type = getActivityCode(activity.activityType);
         setFormatBooleans(activity);
         updateActivityDescriptionAndInstructions(activity, save_file.title);
       }
       //topics:
+      let topicCount = 1;
       for (const topic of module.topics) {
         delete topic.description;
         for (const activity of topic.topicActivities) {
-          activity.activityPath = './modules/' + String(module.moduleCount).padStart(3, '0') + '-' + module.title + '/' + String(topic.topicCount).padStart(3, '0') + '-' + topic.title + '/' + activity.activityName + '.md';
+          activity.activityPath = './modules/' + String(moduleCount).padStart(3, '0') + '-' + module.title + '/' + String(topicCount).padStart(3, '0') + '-' + topic.title + '/' + activity.activityName + '.md';
           activity.type = getActivityCode(activity.activityType);
           setFormatBooleans(activity);
           updateActivityDescriptionAndInstructions(activity, save_file.title);
         }
+        topicCount++;
       }
-    }
-
-    // remove moduleCount and topicCount from the JSON:
-    for (const module of save_file.modules) {
-      delete module.moduleCount;
-      for (const topic of module.topics) {
-        delete topic.topicCount;
-      }
+      moduleCount++;
     }
 
     downloadFile('Use-This-To-Update-Activites.json', save_file);
