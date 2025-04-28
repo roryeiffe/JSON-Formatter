@@ -4,7 +4,7 @@ import { IDsGenerator } from '../utils/IDsGenerator';
 import { Activity, UnitActivity } from '../types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { getActivityCode, setFormatBooleans } from '../utils/activityCodes';
+import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -44,7 +44,8 @@ const ExcelUploader: React.FC = () => {
       const exitCriteriaSheet = workbook.Sheets['Exit Criteria'];
       const metadataSheet = workbook.Sheets['Metadata'];
 
-      const unitName = file.name.substring(0, file.name.lastIndexOf('.'));
+      let unitName = file.name.substring(0, file.name.lastIndexOf('.'));
+      unitName = unitName.substring(0, unitName.lastIndexOf("Structure")).trim();
 
 
       // parse into JSON:
@@ -211,7 +212,7 @@ const ExcelUploader: React.FC = () => {
 
     // Generate and trigger download
     const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `${navigation_json.title || 'unit'}.zip`);
+    saveAs(content, `${unitName || 'unit'}-generated-files.zip`);
   };
 
   const generate_navigation_json = async (parsedExcel: any, exit_criteria_json: any[], metadata_json: any[], fileName: string) => {
