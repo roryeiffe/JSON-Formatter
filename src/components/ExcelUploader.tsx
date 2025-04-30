@@ -161,9 +161,10 @@ const ExcelUploader: React.FC = () => {
       for (const topic of module.topics) {
         const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + topic.title);
         for (const activity of topic.topicActivities) {
+          updateActivityDescriptionAndInstructions(activity, unit.title);
           const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
             'Activity URL: ' + activity.activityURL + '\n' +
-            'Activity Description: ';
+            'Activity Description: ' + activity.description;
           topicFolder?.file(`${activity.activityName}.md`, fileContent);
         }
         topicCount++;
@@ -171,9 +172,10 @@ const ExcelUploader: React.FC = () => {
       }
 
       for (const activity of module.moduleActivities) {
+        updateActivityDescriptionAndInstructions(activity, unit.title);
         const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
           'Activity URL: ' + activity.activityURL + '\n' +
-          'Activity Description: ';
+          'Activity Description: ' + activity.description;
         moduleFolder?.file(`${activity.activityName}.md`, fileContent);
       }
       moduleCount++; 
@@ -182,9 +184,10 @@ const ExcelUploader: React.FC = () => {
     }
 
     for (const activity of unit.unitActivities) {
+      updateActivityDescriptionAndInstructions(activity, unit.title);
       const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
         'Activity URL: ' + activity.activityURL + '\n' +
-        'Activity Description: ';
+        'Activity Description: ' + activity.description;
       rootFolder?.file(`${activity.activityName}.md`, fileContent);
     }
 
