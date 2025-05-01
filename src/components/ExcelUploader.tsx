@@ -7,6 +7,7 @@ import { saveAs } from 'file-saver';
 import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
 import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
 import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
+import { getReadableActivityName } from '../utils/ActivityNameGenerator';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -47,7 +48,10 @@ const ExcelUploader: React.FC = () => {
       const metadataSheet = workbook.Sheets['Metadata'];
 
       let unitName = file.name.substring(0, file.name.lastIndexOf('.'));
-      unitName = unitName.substring(0, unitName.lastIndexOf("Structure")).trim();
+      // remove "Structure" from the unit name if it exists
+      if (unitName.endsWith("Structure")) {
+        unitName = unitName.substring(0, unitName.lastIndexOf("Structure")).trim();
+      }
 
 
       // parse into JSON:
@@ -78,18 +82,18 @@ const ExcelUploader: React.FC = () => {
       title: fileName,
       description: '',
     };
-  
+
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
       const topicTitle = row.Topic?.trim();
-  
+
       let currentModule = null;
       let currentTopic = null;
-  
+
       // === 1. Find or create the Module ===
       if (moduleTitle && moduleTitle !== "N/A") {
         currentModule = unit.modules.find((mod: any) => mod.title === moduleTitle);
-        
+
         if (!currentModule) {
           currentModule = {
             id: await IDsGenerator(moduleTitle),
@@ -101,11 +105,11 @@ const ExcelUploader: React.FC = () => {
           unit.modules.push(currentModule);
         }
       }
-  
+
       // === 2. Find or create the Topic inside the Module ===
       if (topicTitle && topicTitle !== "N/A" && currentModule) {
         currentTopic = currentModule.topics.find((top: any) => top.title === topicTitle);
-        
+
         if (!currentTopic) {
           currentTopic = {
             id: await IDsGenerator(topicTitle),
@@ -116,11 +120,11 @@ const ExcelUploader: React.FC = () => {
           currentModule.topics.push(currentTopic);
         }
       }
-  
+
       // === 3. Parse the Activity ===
       const activityName = row["Activity Name"]?.trim();
       if (!activityName) continue;
-  
+
       const activity: any = {
         ...EMPTY_ACTIVITY,
         activityId: await IDsGenerator(activityName),
@@ -131,7 +135,7 @@ const ExcelUploader: React.FC = () => {
         duration: row["Duration"],
         isReview: row["Activity Grouping"]?.trim() === "Review",
       };
-  
+
       // === 4. Assign Activity based on Scope ===
       const scope = row["Activity Scope"]?.trim();
       if (scope === 'Unit') {
@@ -142,13 +146,13 @@ const ExcelUploader: React.FC = () => {
         currentTopic.topicActivities.push(activity);
       }
     }
-  
+
     return unit;
   };
-  
 
 
-  const generateZipStructure = async (unit: any, unitName: string, format_files:any, navigation_json:any) => {
+
+  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any) => {
     const zip = new JSZip();
     const rootFolder = zip.folder(unitName || 'unit');
     const moduleContainerFolder = rootFolder?.folder('modules');
@@ -162,7 +166,7 @@ const ExcelUploader: React.FC = () => {
         const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + topic.title);
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
-          const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
+          const fileContent = 'Activity Name: ' + getReadableActivityName(activity, topic.title) + '\n' +
             'Activity URL: ' + activity.activityURL + '\n' +
             'Activity Description: ' + activity.description;
           topicFolder?.file(`${activity.activityName}.md`, fileContent);
@@ -173,19 +177,19 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
+        const fileContent = 'Activity Name: ' + getReadableActivityName(activity, module.title) + '\n' +
           'Activity URL: ' + activity.activityURL + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${activity.activityName}.md`, fileContent);
       }
-      moduleCount++; 
+      moduleCount++;
 
 
     }
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      const fileContent = 'Activity Name: ' + activity.activityName + '\n' +
+      const fileContent = 'Activity Name: ' + getReadableActivityName(activity, unitName) + '\n' +
         'Activity URL: ' + activity.activityURL + '\n' +
         'Activity Description: ' + activity.description;
       rootFolder?.file(`${activity.activityName}.md`, fileContent);

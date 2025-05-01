@@ -1,5 +1,3 @@
-import { act } from "react"
-
 const activityToCodeMap: Record<string, string> = {
   "Exam": "ACT003",
   "Lesson - Video": "ACT0061",
