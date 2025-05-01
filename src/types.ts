@@ -41,6 +41,7 @@ type Activity = {
   moduleId?: string,
   topicId?: string,
   activityName: string,
+  displayName: string,
   activityType: string,
   type: string,
   activityPath: string,

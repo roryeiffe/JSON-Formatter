@@ -10,7 +10,7 @@ import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
 import { getReadableActivityName } from '../utils/ActivityNameGenerator';
 
 const EMPTY_ACTIVITY: Activity = {
-  activityId: '', activityName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
+  activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
   duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
   vsCodeExtensionUrl: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
@@ -129,6 +129,7 @@ const ExcelUploader: React.FC = () => {
         ...EMPTY_ACTIVITY,
         activityId: await IDsGenerator(activityName),
         activityName,
+        displayName: row["Display Name"]?.trim(),
         activityURL: row["Content URL"],
         activityType: row["Activity Type"],
         type: 'HARDCODED VALUE',
@@ -166,7 +167,7 @@ const ExcelUploader: React.FC = () => {
         const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + topic.title);
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
-          const fileContent = 'Activity Name: ' + getReadableActivityName(activity, topic.title) + '\n' +
+          const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activity.activityURL + '\n' +
             'Activity Description: ' + activity.description;
           topicFolder?.file(`${activity.activityName}.md`, fileContent);
@@ -177,7 +178,7 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        const fileContent = 'Activity Name: ' + getReadableActivityName(activity, module.title) + '\n' +
+        const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
           'Activity URL: ' + activity.activityURL + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${activity.activityName}.md`, fileContent);
@@ -189,7 +190,7 @@ const ExcelUploader: React.FC = () => {
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      const fileContent = 'Activity Name: ' + getReadableActivityName(activity, unitName) + '\n' +
+      const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
         'Activity URL: ' + activity.activityURL + '\n' +
         'Activity Description: ' + activity.description;
       rootFolder?.file(`${activity.activityName}.md`, fileContent);
