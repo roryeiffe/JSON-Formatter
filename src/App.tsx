@@ -15,7 +15,7 @@ const App = ({ onClick, text }: AppProps) => {
 
       <Header></Header>
         <Routes>
-          <Route path="/" Component={GenerateJSON} />
+          <Route path="/" Component={ExcelUploader} />
           <Route path="/activities" Component={GenerateActivitiesPage} />
           <Route path="/excel" Component={ExcelUploader} />
         </Routes>

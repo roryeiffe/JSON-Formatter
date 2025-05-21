@@ -1,13 +1,12 @@
 import React, { act, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { IDsGenerator } from '../utils/IDsGenerator';
+import { IDsGenerator, IDsGeneratorRandom } from '../utils/IDsGenerator';
 import { Activity, UnitActivity } from '../types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
 import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
 import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
-import { getReadableActivityName } from '../utils/ActivityNameGenerator';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -127,7 +126,7 @@ const ExcelUploader: React.FC = () => {
 
       const activity: any = {
         ...EMPTY_ACTIVITY,
-        activityId: await IDsGenerator(activityName),
+        activityId: IDsGeneratorRandom(),
         activityName,
         displayName: row["Display Name"]?.trim(),
         activityURL: row["Content URL"],
@@ -139,14 +138,19 @@ const ExcelUploader: React.FC = () => {
 
       // === 4. Assign Activity based on Scope ===
       const scope = row["Activity Scope"]?.trim();
+      console.log(scope);
       if (scope === 'Unit') {
         unit.unitActivities.push(activity);
       } else if (scope === 'Module' && currentModule) {
         currentModule.moduleActivities.push(activity);
       } else if (scope === 'Topic' && currentTopic) {
         currentTopic.topicActivities.push(activity);
+      } else {
+        console.warn(`Activity "${activityName}" has an invalid scope: [${scope}]`);
       }
     }
+
+    console.log('Parsed Unit:', unit);
 
     return unit;
   };
@@ -286,6 +290,10 @@ const ExcelUploader: React.FC = () => {
 
     return downloadTaxonomyAllFormats(save_file);
   };
+
+  // IDsGeneratorRandom().then((randomID) => {
+  //   console.log('Random ID:', randomID);
+  // });
 
   return (
     <div className="p-4 border rounded-md shadow-md max-w-xl mx-auto">
