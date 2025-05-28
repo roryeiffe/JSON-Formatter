@@ -221,8 +221,10 @@ const ExcelUploader: React.FC = () => {
       ...navigation_json,
       exitCriteria: [],
       tags: [],
-      skills: ''
+      skills: parsedExcel.title
     }
+
+    console.log(parsedExcel);
 
     // Exit Criteria:
     for (const row of exit_criteria_json) {
