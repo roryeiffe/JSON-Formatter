@@ -2,7 +2,7 @@ import React, { useState, useEffect, ChangeEvent, FormEvent, act } from "react";
 import { Activity, AddActivityProps, ArtifactAttachment } from "../types";
 
 import '../styles/AddActivity.css';
-import { IDsGenerator } from "../utils/IDsGenerator";
+import { IDsGenerator, IDsGeneratorRandom } from "../utils/IDsGenerator";
 import ArtifactAttachmentForm from "./form-components/ArtifactAttachmentForm";
 import URLAttachmentForm from "./form-components/URLAttachmentForm";
 import TagForm from "./form-components/TagForm";
@@ -23,6 +23,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
     activityPath: './path',
     activityURL: 'http://example.com',
     activityType: 'lecture',
+    displayName: '',
     type: 'ACT0063',
     description: '',
     instruction: '',
@@ -95,7 +96,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
 
     if (!hierarchyItem.hierarchyType) return;
     if (!updateMode) {
-      activity.activityId = await IDsGenerator(activity.activityName);
+      activity.activityId = IDsGeneratorRandom();
     }
     upsertActivityFunc(activity, hierarchyItem.hierarchyType, hierarchyItem.id);
     setActivity({

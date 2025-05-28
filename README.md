@@ -52,3 +52,8 @@ bun run dev
 - Taxonomy
 - Modules
 - Topic
+
+
+| Version    | Date | Description |
+| -------- | ------- | ----------- |
+| V1.0  | 05/28/2024    | This version of the JSON Formatter generates the repo structure based on an uploaded excel file. It takes into account Kannan's latest feedback including different GUID's for activities across formats, template array in navigation.json, and GUIDs for topics. |
