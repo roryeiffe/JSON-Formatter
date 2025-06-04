@@ -6,6 +6,7 @@ import { Route, Routes } from 'react-router-dom';
 import GenerateJSON from './pages/GenerateJSONPage';
 import GenerateActivitiesPage from './pages/GenerateActivitiesPage';
 import ExcelUploader from './components/ExcelUploader';
+import ActivityMappingUtil from './pages/ActivityMappingUtil';
 
 const App = ({ onClick, text }: AppProps) => {
 
@@ -18,6 +19,7 @@ const App = ({ onClick, text }: AppProps) => {
           <Route path="/" Component={ExcelUploader} />
           <Route path="/activities" Component={GenerateActivitiesPage} />
           <Route path="/excel" Component={ExcelUploader} />
+          <Route path="/mapping" Component = {ActivityMappingUtil}/>
         </Routes>
     </>
   )
