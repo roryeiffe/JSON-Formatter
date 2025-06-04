@@ -1,4 +1,4 @@
-const version = 'v1.1';
+const version = 'v1.2';
 
 export const returnVersionComment = () => {
     return `// Version: ${version} - This comment is auto-generated. Do not edit manually.`;
