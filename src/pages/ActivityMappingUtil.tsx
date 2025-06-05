@@ -126,7 +126,7 @@ const ActivityMappingUtil = () => {
       "Activity Name": `${unitPrefix}-RVLEC-${unitShortHand}`,
       "Display Name": `${unitShortHand} Review Lecture`,
       "Activity Grouping": "Review",
-      "Activity Type": "Learning Content - Lecture",
+      "Activity Type": "Lesson - Live Lecture",
       "Activity Scope": "Unit",
       "Topic": "N/A",
       "Module": "N/A"
