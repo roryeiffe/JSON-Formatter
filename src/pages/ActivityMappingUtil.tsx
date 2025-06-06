@@ -183,7 +183,7 @@ const ActivityMappingUtil = () => {
       "Activity Name": `${unitPrefix}-MP-${unitShortHand}`,
       "Display Name": `${unitShortHand} Mini Project`,
       "Activity Grouping": "Review",
-      "Activity Type": "Mini Project",
+      "Activity Type": "Lab - Mini Project",
       "Activity Scope": "Unit",
       "Topic": "N/A",
       "Module": "N/A"
