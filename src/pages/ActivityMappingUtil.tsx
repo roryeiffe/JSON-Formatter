@@ -83,19 +83,34 @@ const ActivityMappingUtil = () => {
     data.forEach((row, index) => {
       modules.add(row.Module);
       // Add row for learning content activity:
-      row["Activity Name"] = `${unitPrefix}-CT-${sanitizeActivityName(row.Topic)}`;
-      row["Display Name"] = row.Topic;
-      row["Activity Grouping"] = "Learning Content";
-      row["Activity Type"] = "Lesson - Learning Content";
-      row["Activity Scope"] = "Topic";
+      const contentRow = {
+        "Module": row.Module,
+        "Topic": row.Topic,
+        "Activity Order": '',
+        "Activity Name": `${unitPrefix}-CT-${sanitizeActivityName(row.Topic)}`,
+        "Display Name": row.Topic,
+        "Activity Grouping": "Learning Content",
+        "Activity Type": "Lesson - Learning Content",
+        "Duration": 10,
+        "Activity Link": "",
+        "Activity Scope": "Topic",
+        "Content URL": "",
+      }
       // Add row for video activity:
-      let videoRow = { ...row };
-      videoRow["Activity Name"] = `${unitPrefix}-VID-${sanitizeActivityName(row.Topic)}`;
-      videoRow["Display Name"] = row.Topic + " Video";
-      videoRow["Activity Grouping"] = "Learning Content";
-      videoRow["Activity Type"] = "Lesson - Video";
-      videoRow["Activity Scope"] = "Topic";
-      newData.push(row);
+      const videoRow = {
+        "Module": row.Module,
+        "Topic": row.Topic,
+        "Activity Order": '',
+        "Activity Name": `${unitPrefix}-VID-${sanitizeActivityName(row.Topic)}`,
+        "Display Name": row.Topic + " Video",
+        "Activity Grouping": "Learning Content",
+        "Activity Type": "Lesson - Video",
+        "Duration": 10,
+        "Activity Link": "",
+        "Activity Scope": "Topic",
+        "Content URL": "",
+      }
+      newData.push(contentRow);
       newData.push(videoRow);
     })
 
@@ -112,6 +127,7 @@ const ActivityMappingUtil = () => {
         "Activity Type": "Lesson - Live Lecture",
         "Activity Scope": "Module",
         "Topic": "N/A",
+        "Duration": 60,
         "Module": module,
       };
       newData.push(row);
@@ -129,7 +145,8 @@ const ActivityMappingUtil = () => {
       "Activity Type": "Lesson - Live Lecture",
       "Activity Scope": "Unit",
       "Topic": "N/A",
-      "Module": "N/A"
+      "Module": "N/A",
+      "Duration": 60
     })
 
 
@@ -140,6 +157,7 @@ const ActivityMappingUtil = () => {
       "Activity Grouping": "Review",
       "Activity Type": "Reference",
       "Activity Scope": "Unit",
+      "Duration": 30,
       "Topic": "N/A",
       "Module": "N/A"
     });
@@ -151,6 +169,7 @@ const ActivityMappingUtil = () => {
       "Activity Grouping": "Review",
       "Activity Type": "Lesson - Video",
       "Activity Scope": "Unit",
+      "Duration": 30,
       "Topic": "N/A",
       "Module": "N/A"
     });
@@ -163,6 +182,7 @@ const ActivityMappingUtil = () => {
       "Activity Grouping": "Review",
       "Activity Type": "Office Hours",
       "Activity Scope": "Unit",
+      "Duration": 30,
       "Topic": "N/A",
       "Module": "N/A"
     });
@@ -174,6 +194,7 @@ const ActivityMappingUtil = () => {
       "Activity Grouping": "Review",
       "Activity Type": "Self Study",
       "Activity Scope": "Unit",
+      "Duration": 30,
       "Topic": "N/A",
       "Module": "N/A"
     });
@@ -185,6 +206,7 @@ const ActivityMappingUtil = () => {
       "Activity Grouping": "Review",
       "Activity Type": "Lab - Mini Project",
       "Activity Scope": "Unit",
+      "Duration": 120,
       "Topic": "N/A",
       "Module": "N/A"
     });
