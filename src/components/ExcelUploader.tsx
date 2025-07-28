@@ -12,7 +12,7 @@ import { returnVersionComment } from '../utils/VersionTracker';
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
   duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
-  vsCodeExtensionUrl: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
+  vsCodeExtensions: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
 
 type ParsedRow = Record<string, any>;
@@ -130,16 +130,40 @@ const ExcelUploader: React.FC = () => {
         activityId: IDsGeneratorRandom(),
         activityName,
         displayName: row["Display Name"]?.trim(),
-        activityURL: row["Content URL"],
         activityType: row["Activity Type"],
         type: 'HARDCODED VALUE',
         duration: row["Duration"],
         isReview: row["Activity Grouping"]?.trim() === "Review",
       };
 
+      let unitName = unit.title.replace(/ Unit/g, '');
+      const formattedUnitName = `TTSP-${unitName.replace(/ /g, '%20')}`;
+      const repoPrefix = `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${formattedUnitName}?path=`;
+      
+      // If the activityURL is not an azure link, delete activityPath field since it is not needed:
+      if (!row["Content URL"].startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
+        activity.activityURL = row["Content URL"];
+        delete activity.activityPath; // Remove activityPath since we are not using it
+      }
+
+      // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
+      else if (row["Content URL"].startsWith(repoPrefix)) {
+        let path = row["Content URL"].replace(repoPrefix, '');
+        path = path.split('&')[0];
+        activity.activityPath = '.' + path;   
+        delete activity.activityURL; // Remove activityURL since we are using activityPath now
+
+      }
+
+      else {
+        console.log(repoPrefix);
+        console.log(row["Content URL"]);
+        console.log("Activity is from a different Azure repo or not an Azure link, keeping activityURL as is.");
+        // 
+      }
+
       // === 4. Assign Activity based on Scope ===
       const scope = row["Activity Scope"]?.trim();
-      console.log(scope);
       if (scope === 'Unit') {
         unit.unitActivities.push(activity);
       } else if (scope === 'Module' && currentModule) {
@@ -150,8 +174,6 @@ const ExcelUploader: React.FC = () => {
         console.warn(`Activity "${activityName}" has an invalid scope: [${scope}]`);
       }
     }
-
-    console.log('Parsed Unit:', unit);
 
     return unit;
   };
@@ -202,9 +224,9 @@ const ExcelUploader: React.FC = () => {
     }
 
     navigation_json.templates = [`${unit.title}-taxonomy-ILT`, `${unit.title}-taxonomy-IST`, `${unit.title}-taxonomy-PLT`];
-  
 
-    rootFolder?.file(`${unit.title}.json`, JSON.stringify(navigation_json, null, 2));
+
+    rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
     rootFolder?.file(`${unit.title}-taxonomy-ILT.json`, JSON.stringify(format_files.ILTFormatFile, null, 2));
     rootFolder?.file(`${unit.title}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
     rootFolder?.file(`${unit.title}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
@@ -219,21 +241,35 @@ const ExcelUploader: React.FC = () => {
     let navigation_json: any = structuredClone(parsedExcel);
     navigation_json = {
       ...navigation_json,
-      exitCriteria: [],
+      exitcriteria: [],
       tags: [],
-      skills: parsedExcel.title
+      skill: parsedExcel.title
     }
 
-    console.log(parsedExcel);
+    // sum up the duration of all activities in the unit:
+    let totalDuration = 0;
+    for (const activity of navigation_json.unitActivities) {
+      totalDuration += activity.duration || 0;
+    }
+    for (const module of navigation_json.modules) {
+      for (const activity of module.moduleActivities) {
+        totalDuration += activity.duration || 0;
+      }
+        for (const topic of module.topics) {
+        for (const activity of topic.topicActivities) {
+          totalDuration += activity.duration || 0;
+        }
+        }
+    }
+
+    navigation_json.duration = totalDuration;
 
     // Exit Criteria:
     for (const row of exit_criteria_json) {
       const exitCriteriaTitle = row["Exit Criteria"]?.trim();
-      const difficulty = row["Criteria Difficulty"]?.trim();
       const assessmentApproach = row["Assessment Approach"]?.trim();
-      navigation_json.exitCriteria.push({
+      navigation_json.exitcriteria.push({
         title: exitCriteriaTitle,
-        difficulty,
         assessmentApproach,
       });
     }
@@ -263,7 +299,6 @@ const ExcelUploader: React.FC = () => {
     // unit:
     delete save_file.description;
     for (const activity of save_file.unitActivities) {
-      activity.activityPath = './' + activity.activityName + '.md';
       activity.type = getActivityCode(activity.activityType);
       setFormatBooleans(activity);
       updateActivityDescriptionAndInstructions(activity, save_file.title);
@@ -273,7 +308,6 @@ const ExcelUploader: React.FC = () => {
     for (const module of save_file.modules) {
       delete module.description;
       for (const activity of module.moduleActivities) {
-        activity.activityPath = './modules/' + String(moduleCount).padStart(3, '0') + '-' + module.title + '/' + activity.activityName + '.md';
         activity.type = getActivityCode(activity.activityType);
         setFormatBooleans(activity);
         updateActivityDescriptionAndInstructions(activity, save_file.title);
@@ -283,7 +317,6 @@ const ExcelUploader: React.FC = () => {
       for (const topic of module.topics) {
         delete topic.description;
         for (const activity of topic.topicActivities) {
-          activity.activityPath = './modules/' + String(moduleCount).padStart(3, '0') + '-' + module.title + '/' + String(topicCount).padStart(3, '0') + '-' + topic.title + '/' + activity.activityName + '.md';
           activity.type = getActivityCode(activity.activityType);
           setFormatBooleans(activity);
           updateActivityDescriptionAndInstructions(activity, save_file.title);
@@ -297,10 +330,6 @@ const ExcelUploader: React.FC = () => {
 
     return downloadTaxonomyAllFormats(save_file);
   };
-
-  // IDsGeneratorRandom().then((randomID) => {
-  //   console.log('Random ID:', randomID);
-  // });
 
   return (
     <div className="p-4 border rounded-md shadow-md max-w-xl mx-auto">
