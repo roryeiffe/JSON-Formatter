@@ -57,7 +57,7 @@ type Activity = {
   isOptional: boolean,
   maxScore?: number,
   githubRepositoryUrl?: string,
-  vsCodeExtension?: string,
+  vsCodeExtensions?: string,
   artifactAttachments: ArtifactAttachment[],
   urlAttachments: URLAttachment[],
   isILT?: boolean,

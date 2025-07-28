@@ -12,7 +12,7 @@ import { returnVersionComment } from '../utils/VersionTracker';
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
   duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
-  vsCodeExtension: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
+  vsCodeExtensions: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
 
 type ParsedRow = Record<string, any>;
@@ -261,7 +261,7 @@ const ExcelUploader: React.FC = () => {
         }
         }
     }
-    
+
     navigation_json.duration = totalDuration;
 
     // Exit Criteria:
