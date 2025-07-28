@@ -36,7 +36,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
     isOptional: false,
     maxScore: 0,
     githubRepositoryUrl: '',
-    vsCodeExtensionUrl: '',
+    vsCodeExtension: '',
     artifactAttachments: [],
     urlAttachments: [],
     isILT: true,
@@ -215,7 +215,7 @@ function AddActivity({ hierarchyItem, upsertActivityFunc, updateMode, activityPr
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 
           <label className="block text-xl mt-2" htmlFor='vscode-extension-url'>VS Code Extension URL (If Applicable)</label>
-          <input onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} value={activity.vsCodeExtensionUrl} type='text' name='vsCodeExtensionUrl' id='vscode-extension-url' className="block px-4 py-2 mt-2 border
+          <input onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChangeHandler(e)} value={activity.vsCodeExtension} type='text' name='vsCodeExtension' id='vscode-extension-url' className="block px-4 py-2 mt-2 border
             border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2
              focus:ring-blue-500 focus:border-blue-500 transition duration-300 w-1/1" />
 

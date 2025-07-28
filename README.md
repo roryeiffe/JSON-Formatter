@@ -59,3 +59,4 @@ bun run dev
 | V1.0  | 05/28/2024    | This version of the JSON Formatter generates the repo structure based on an uploaded excel file. It takes into account Kannan's latest feedback including different GUID's for activities across formats, template array in navigation.json, and GUIDs for topics. |
 | V1.1  | 05/28/2024    | Added automatic generation of skill name. |
 | V1.2  | 06/04/2025    | Added activity mapping tool . |
+| V1.3  | 07/25/2025    | Modified JSON Formatter, renaming fields (skills -> skill, exitCriteria -> exitcriteria). Removed "difficulty" field from Exit Criteria. Populates activityUrl OR activityPath based on the type of activity and where the content is located.                               |
