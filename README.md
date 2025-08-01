@@ -60,3 +60,4 @@ bun run dev
 | V1.1  | 05/28/2024    | Added automatic generation of skill name. |
 | V1.2  | 06/04/2025    | Added activity mapping tool . |
 | V1.3  | 07/25/2025    | Modified JSON Formatter, renaming fields (skills -> skill, exitCriteria -> exitcriteria). Removed "difficulty" field from Exit Criteria. Populates activityUrl OR activityPath based on the type of activity and where the content is located.                               |
+| V1.4  |  08/01/2025  | Added functionality to pull in content from other Azure repos and include them in the downloaded zip file, while updating the activityPath field for the corresponding activities. | 

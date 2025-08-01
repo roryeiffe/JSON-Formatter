@@ -2,12 +2,14 @@ import React, { act, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { IDsGenerator, IDsGeneratorRandom } from '../utils/IDsGenerator';
 import { Activity, UnitActivity } from '../types';
+import { PRODUCTION_URL } from '../urls';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
 import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
 import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
 import { returnVersionComment } from '../utils/VersionTracker';
+import axios from 'axios';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -61,14 +63,17 @@ const ExcelUploader: React.FC = () => {
 
 
       // convert the Excel data to JSON, which will be used to generate the navigation JSON, the zip structure, and the save JSON
-      const parsedTaxonomy = await parseTaxonomyExcel(taxonomyJson, unitName);
+      const result = await parseTaxonomyExcel(taxonomyJson, unitName);
+
+      const parsedTaxonomy = result.unit;
+      const externalActivities = result.externalActivities;
 
       // 
       const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
       const format_files = await addActivityFields(structuredClone(parsedTaxonomy));
 
       // download the artifacts:
-      generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json);
+      generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json, externalActivities);
     };
 
     reader.readAsBinaryString(file);
@@ -82,6 +87,8 @@ const ExcelUploader: React.FC = () => {
       title: fileName,
       description: '',
     };
+
+    let externalActivities = [];
 
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
@@ -139,7 +146,7 @@ const ExcelUploader: React.FC = () => {
       let unitName = unit.title.replace(/ Unit/g, '');
       const formattedUnitName = `TTSP-${unitName.replace(/ /g, '%20')}`;
       const repoPrefix = `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${formattedUnitName}?path=`;
-      
+
       // If the activityURL is not an azure link, delete activityPath field since it is not needed:
       if (!row["Content URL"].startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
         activity.activityURL = row["Content URL"];
@@ -150,16 +157,19 @@ const ExcelUploader: React.FC = () => {
       else if (row["Content URL"].startsWith(repoPrefix)) {
         let path = row["Content URL"].replace(repoPrefix, '');
         path = path.split('&')[0];
-        activity.activityPath = '.' + path;   
+        activity.activityPath = '.' + path;
         delete activity.activityURL; // Remove activityURL since we are using activityPath now
 
       }
 
       else {
-        console.log(repoPrefix);
-        console.log(row["Content URL"]);
-        console.log("Activity is from a different Azure repo or not an Azure link, keeping activityURL as is.");
-        // 
+        const url = row["Content URL"];
+        const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
+        const content = res.data.content;
+        const markdown = JSON.parse(content).content;
+        externalActivities.push({ name: row["Activity Name"], content: markdown });
+        activity.activityPath = `./external-activities/${activity.activityName}.md`;
+        delete activity.activityURL;
       }
 
       // === 4. Assign Activity based on Scope ===
@@ -175,15 +185,21 @@ const ExcelUploader: React.FC = () => {
       }
     }
 
-    return unit;
+    return {unit, externalActivities};
   };
 
 
 
-  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any) => {
+  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any, externalActivities: any) => {
     const zip = new JSZip();
     const rootFolder = zip.folder(unitName || 'unit');
     const moduleContainerFolder = rootFolder?.folder('modules');
+
+    const externalActivitiesFolder = rootFolder?.folder('external-activities');
+    for(const activity of externalActivities) {
+      externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
+    }
+
 
     let moduleCount = 1;
     for (const module of unit.modules) {
@@ -255,11 +271,11 @@ const ExcelUploader: React.FC = () => {
       for (const activity of module.moduleActivities) {
         totalDuration += activity.duration || 0;
       }
-        for (const topic of module.topics) {
+      for (const topic of module.topics) {
         for (const activity of topic.topicActivities) {
           totalDuration += activity.duration || 0;
         }
-        }
+      }
     }
 
     navigation_json.duration = totalDuration;
@@ -326,7 +342,7 @@ const ExcelUploader: React.FC = () => {
       moduleCount++;
     }
 
-    downloadFile('Use-This-To-Update-Activites.json', save_file);
+    downloadFile('Use-This-To-Update-Activities.json', save_file);
 
     return downloadTaxonomyAllFormats(save_file);
   };
