@@ -57,7 +57,7 @@ bun run dev
 | Version    | Date | Description |
 | -------- | ------- | ----------- |
 | V1.0  | 05/28/2024    | This version of the JSON Formatter generates the repo structure based on an uploaded excel file. It takes into account Kannan's latest feedback including different GUID's for activities across formats, template array in navigation.json, and GUIDs for topics. |
-| V1.1  | 05/28/2024    | Added automatic generation of skill name. |
-| V1.2  | 06/04/2025    | Added activity mapping tool . |
+| V1.1  | 05/28/2024    | Added automatic generation of skill name based on information stored in the meta-data sheet in the excel workbooks. |
+| V1.2  | 06/04/2025    | Added activity mapping tool. The activity mapping tool takes an excel sheet with just the topics and modules defined and automatically populates the sheet with activities that are common across most units (including written content and video for each topic, a lecture for each module, and the standard review activities) |
 | V1.3  | 07/25/2025    | Modified JSON Formatter, renaming fields (skills -> skill, exitCriteria -> exitcriteria). Removed "difficulty" field from Exit Criteria. Populates activityUrl OR activityPath based on the type of activity and where the content is located.                               |
 | V1.4  |  08/01/2025  | Added functionality to pull in content from other Azure repos and include them in the downloaded zip file, while updating the activityPath field for the corresponding activities. | 

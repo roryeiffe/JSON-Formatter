@@ -21,6 +21,7 @@ type ParsedRow = Record<string, any>;
 
 const ExcelUploader: React.FC = () => {
   const [data, setData] = useState<ParsedRow[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const downloadFile = async (fileName: string, content: string) => {
     const fileData = JSON.stringify(content);
@@ -31,9 +32,11 @@ const ExcelUploader: React.FC = () => {
     linkElement.download = `${fileName}`;
     linkElement.href = url;
     linkElement.click();
+    setLoading(false);
   }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLoading(true);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -359,6 +362,7 @@ const ExcelUploader: React.FC = () => {
           <pre className="bg-gray-100 p-2 rounded overflow-x-auto max-h-64">{JSON.stringify(data, null, 2)}</pre>
         </div>
       )}
+      {loading && <img src = './loading.gif' width = '50px' />}
     </div>
   );
 };
