@@ -23,8 +23,8 @@ export const getActivityCode = (activity: string): string => {
 
 const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours"];
 const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge"]
-const PLTActivityTypes = ["Reference", "Lesson - Video"]
-const PLTReviewTypes   = ["Reference", "Lesson - Video"]
+const PLTActivityTypes = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours","Reference", "Lesson - Video"]
+const PLTReviewTypes   = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Reference", "Lesson - Video"]
 
 export const setFormatBooleans = (activity: any) => {
   // All activities are included in ILT:
@@ -35,6 +35,6 @@ export const setFormatBooleans = (activity: any) => {
     (activity.isReview && ISTReviewTypes.includes(activity.activityType));
 
   // Activity is in PLT if it is in IST or Reference/Video
-  activity.isPLT = activity.isIST || PLTActivityTypes.includes(activity.activityType) ||
+  activity.isPLT = PLTActivityTypes.includes(activity.activityType) ||
     (activity.isReview && PLTReviewTypes.includes(activity.activityType));
 }
