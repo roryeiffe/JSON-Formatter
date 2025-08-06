@@ -53,10 +53,17 @@ const ExcelUploader: React.FC = () => {
       const metadataSheet = workbook.Sheets['Metadata'];
 
       let unitName = file.name.substring(0, file.name.lastIndexOf('.'));
-      // remove "Structure" from the unit name if it exists
-      if (unitName.endsWith("Structure")) {
-        unitName = unitName.substring(0, unitName.lastIndexOf("Structure")).trim();
-      }
+
+      // remove (n) from end:
+      unitName = unitName.replace(/\s*\(\d+\)\s*$/, '');
+
+      const endings = ["Unit Breakdown", "Structure"];
+      // remove "Unit Breakdown" or "Structure" from the unit name if it exists
+      for (const ending of endings) {
+          if (unitName.endsWith(ending)) {
+              unitName = unitName.slice(0, -ending.length).trim();
+          }
+        }
 
 
       // parse into JSON:
@@ -149,16 +156,22 @@ const ExcelUploader: React.FC = () => {
       let unitName = unit.title.replace(/ Unit/g, '');
       const formattedUnitName = `TTSP-${unitName.replace(/ /g, '%20')}`;
       const repoPrefix = `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${formattedUnitName}?path=`;
+      let url = row["Content URL"]?.trim();
+      // remove version=GBmain from the URL if it exists
+      if (url && url.includes('version=GBmain&')) {
+        url = url.replace('version=GBmain&', '');
+      }
+
 
       // If the activityURL is not an azure link, delete activityPath field since it is not needed:
-      if (!row["Content URL"].startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
+      if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
         activity.activityURL = row["Content URL"];
         delete activity.activityPath; // Remove activityPath since we are not using it
       }
 
       // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
-      else if (row["Content URL"].startsWith(repoPrefix)) {
-        let path = row["Content URL"].replace(repoPrefix, '');
+      else if (url.startsWith(repoPrefix)) {
+        let path = url.replace(repoPrefix, '');
         path = path.split('&')[0];
         activity.activityPath = '.' + path;
         delete activity.activityURL; // Remove activityURL since we are using activityPath now
@@ -166,7 +179,8 @@ const ExcelUploader: React.FC = () => {
       }
 
       else {
-        const url = row["Content URL"];
+        console.log(url);
+        console.log(repoPrefix)
         const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
         const content = res.data.content;
         const markdown = JSON.parse(content).content;
@@ -188,7 +202,7 @@ const ExcelUploader: React.FC = () => {
       }
     }
 
-    return {unit, externalActivities};
+    return { unit, externalActivities };
   };
 
 
@@ -199,7 +213,7 @@ const ExcelUploader: React.FC = () => {
     const moduleContainerFolder = rootFolder?.folder('modules');
 
     const externalActivitiesFolder = rootFolder?.folder('external-activities');
-    for(const activity of externalActivities) {
+    for (const activity of externalActivities) {
       externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
     }
 
@@ -213,8 +227,11 @@ const ExcelUploader: React.FC = () => {
         const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + topic.title);
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
+
+          let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${unitName.replace(/ /g, '%20')}?path=${activity.activityPath}`;
+
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
-            'Activity URL: ' + activity.activityURL + '\n' +
+            'Activity URL: ' + activityUrl + '\n' +
             'Activity Description: ' + activity.description;
           topicFolder?.file(`${activity.activityName}.md`, fileContent);
         }
@@ -224,8 +241,9 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
+        let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${unitName.replace(/ /g, '%20')}?path=${activity.activityPath}`;
         const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
-          'Activity URL: ' + activity.activityURL + '\n' +
+          'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${activity.activityName}.md`, fileContent);
       }
@@ -236,8 +254,9 @@ const ExcelUploader: React.FC = () => {
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
+      let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${unitName.replace(/ /g, '%20')}?path=${activity.activityPath}`;
       const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
-        'Activity URL: ' + activity.activityURL + '\n' +
+        'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
       rootFolder?.file(`${activity.activityName}.md`, fileContent);
     }
@@ -362,7 +381,7 @@ const ExcelUploader: React.FC = () => {
           <pre className="bg-gray-100 p-2 rounded overflow-x-auto max-h-64">{JSON.stringify(data, null, 2)}</pre>
         </div>
       )}
-      {loading && <img src = './loading.gif' width = '50px' />}
+      {loading && <img src='./loading.gif' width='50px' />}
     </div>
   );
 };
