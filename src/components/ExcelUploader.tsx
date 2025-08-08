@@ -17,6 +17,10 @@ const EMPTY_ACTIVITY: Activity = {
   vsCodeExtensions: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
 
+const sanitizeFilename = (filename: string) => {
+  return filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+}
+
 type ParsedRow = Record<string, any>;
 
 const ExcelUploader: React.FC = () => {
@@ -60,10 +64,10 @@ const ExcelUploader: React.FC = () => {
       const endings = ["Unit Breakdown", "Structure"];
       // remove "Unit Breakdown" or "Structure" from the unit name if it exists
       for (const ending of endings) {
-          if (unitName.endsWith(ending)) {
-              unitName = unitName.slice(0, -ending.length).trim();
-          }
+        if (unitName.endsWith(ending)) {
+          unitName = unitName.slice(0, -ending.length).trim();
         }
+      }
 
 
       // parse into JSON:
@@ -107,8 +111,11 @@ const ExcelUploader: React.FC = () => {
       let currentModule = null;
       let currentTopic = null;
 
+      const isValidTitle = (title: string) => title && title.trim() && !["N/A", "NA", "n/a"].includes(title.trim());
+
+
       // === 1. Find or create the Module ===
-      if (moduleTitle && moduleTitle !== "N/A") {
+      if (isValidTitle(moduleTitle)) {
         currentModule = unit.modules.find((mod: any) => mod.title === moduleTitle);
 
         if (!currentModule) {
@@ -124,7 +131,7 @@ const ExcelUploader: React.FC = () => {
       }
 
       // === 2. Find or create the Topic inside the Module ===
-      if (topicTitle && topicTitle !== "N/A" && currentModule) {
+      if (isValidTitle(topicTitle) && currentModule) {
         currentTopic = currentModule.topics.find((top: any) => top.title === topicTitle);
 
         if (!currentTopic) {
@@ -139,75 +146,96 @@ const ExcelUploader: React.FC = () => {
       }
 
       // === 3. Parse the Activity ===
-      const activityName = row["Activity Name"]?.trim();
+      let activityName = row["Activity Name"]?.trim();
       if (!activityName) continue;
 
+      // Remove invalid filesystem characters from activityName
+      activityName = sanitizeFilename(activityName).trim();
+
+      // Initialize an empty activity:
       const activity: any = {
         ...EMPTY_ACTIVITY,
         activityId: IDsGeneratorRandom(),
         activityName,
         displayName: row["Display Name"]?.trim(),
         activityType: row["Activity Type"],
-        type: 'HARDCODED VALUE',
+        type: getActivityCode(row["Activity Type"]),
         duration: row["Duration"],
         isReview: row["Activity Grouping"]?.trim() === "Review",
       };
 
       let unitName = unit.title.replace(/ Unit/g, '');
-      const formattedUnitName = `TTSP-${unitName.replace(/ /g, '%20')}`;
-      const repoPrefix = `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${formattedUnitName}?path=`;
+      let unitNameWithHyphens = unitName.replace(/ /g, '-').toLowerCase();
+
       let url = row["Content URL"]?.trim();
-      // remove version=GBmain from the URL if it exists
-      if (url && url.includes('version=GBmain&')) {
-        url = url.replace('version=GBmain&', '');
+
+      try {
+        const parsedUrl = new URL(url);
+
+        const decodedPathName = decodeURIComponent(parsedUrl.pathname).toLowerCase();
+
+        // If the activityURL is not an azure link, delete activityPath field since it is not needed:
+        if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
+          activity.activityURL = url;
+          delete activity.activityPath; // Remove activityPath since we are not using it
+        }
+
+
+
+        // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
+        else if (decodedPathName.includes(unitName.toLowerCase())) {
+          // extract path from url:
+          let path = parsedUrl.searchParams.get('path') || '';
+          activity.activityPath = '.' + path;
+          delete activity.activityURL; // Remove activityURL since we are using activityPath now
+        }
+
+        else {
+          try {
+            console.log("Fetching external activity content...");
+            console.log(url);
+            const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
+            const content = res.data.content;
+            const markdown = JSON.parse(content).content;
+            externalActivities.push({ name: row["Activity Name"], content: markdown });
+            activity.activityPath = `./external-activities/${activity.activityName}.md`;
+            delete activity.activityURL;
+          } catch (error) {
+            console.error(`Failed to fetch external activity content for URL: ${url}`, error);
+            // Optional: set fallback data or mark activity as failed
+            activity.activityPath = null; // or some placeholder
+            // You might want to push to externalActivities with empty content or skip it
+          }
+        }
+      } catch (error) {
+        console.error(`Invalid URL for activity "${activityName}":`, url);
+        activity.activityURL = url;
       }
 
-
-      // If the activityURL is not an azure link, delete activityPath field since it is not needed:
-      if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
-        activity.activityURL = row["Content URL"];
-        delete activity.activityPath; // Remove activityPath since we are not using it
-      }
-
-      // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
-      else if (url.startsWith(repoPrefix)) {
-        let path = url.replace(repoPrefix, '');
-        path = path.split('&')[0];
-        activity.activityPath = '.' + path;
-        delete activity.activityURL; // Remove activityURL since we are using activityPath now
-
-      }
-
-      else {
-        console.log(url);
-        console.log(repoPrefix)
-        const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
-        const content = res.data.content;
-        const markdown = JSON.parse(content).content;
-        externalActivities.push({ name: row["Activity Name"], content: markdown });
-        activity.activityPath = `./external-activities/${activity.activityName}.md`;
-        delete activity.activityURL;
+      if (!(activity.activityPath || activity.activityURL)) {
+        console.error(`Activity "${activityName}" has no valid URL or path.`);
       }
 
       // === 4. Assign Activity based on Scope ===
-      const scope = row["Activity Scope"]?.trim();
-      if (scope === 'Unit') {
+      const scope = row["Activity Scope"]?.trim().toLowerCase();
+      if (scope === 'unit') {
         unit.unitActivities.push(activity);
-      } else if (scope === 'Module' && currentModule) {
+      } else if (scope === 'module' && currentModule) {
         currentModule.moduleActivities.push(activity);
-      } else if (scope === 'Topic' && currentTopic) {
+      } else if (scope === 'topic' && currentTopic) {
         currentTopic.topicActivities.push(activity);
       } else {
         console.warn(`Activity "${activityName}" has an invalid scope: [${scope}]`);
       }
     }
-
     return { unit, externalActivities };
   };
 
 
 
   const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any, externalActivities: any) => {
+    const encodedUnitName = encodeURIComponent(unitName);
+
     const zip = new JSZip();
     const rootFolder = zip.folder(unitName || 'unit');
     const moduleContainerFolder = rootFolder?.folder('modules');
@@ -220,20 +248,28 @@ const ExcelUploader: React.FC = () => {
 
     let moduleCount = 1;
     for (const module of unit.modules) {
-      const moduleFolder = moduleContainerFolder?.folder(String(moduleCount).padStart(3, '0') + '-' + module.title);
+      if (!module.title) {
+        console.warn(`Module ${moduleCount} has no title, skipping...`);
+        continue;
+      }
+      const moduleFolder = moduleContainerFolder?.folder(String(moduleCount).padStart(3, '0') + '-' + sanitizeFilename(module.title));
 
       let topicCount = 1;
       for (const topic of module.topics) {
-        const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + topic.title);
+        if (!topic.title) {
+          console.warn(`Topic ${topicCount} in Module ${module.title} has no title, skipping...`);
+          continue;
+        }
+        const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + sanitizeFilename(topic.title));
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
-          let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${unitName.replace(/ /g, '%20')}?path=${activity.activityPath}`;
+          let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${encodedUnitName}?path=${activity.activityPath}`;
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
             'Activity Description: ' + activity.description;
-          topicFolder?.file(`${activity.activityName}.md`, fileContent);
+          topicFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
         }
         topicCount++;
 
@@ -241,34 +277,35 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${unitName.replace(/ /g, '%20')}?path=${activity.activityPath}`;
+        let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${encodedUnitName}?path=${activity.activityPath}`;
         const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
-        moduleFolder?.file(`${activity.activityName}.md`, fileContent);
+        moduleFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
       }
       moduleCount++;
 
 
     }
 
+
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${unitName.replace(/ /g, '%20')}?path=${activity.activityPath}`;
+      let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${encodedUnitName}?path=${activity.activityPath}`;
       const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
-      rootFolder?.file(`${activity.activityName}.md`, fileContent);
+      rootFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
     }
 
-    navigation_json.templates = [`${unit.title}-taxonomy-ILT`, `${unit.title}-taxonomy-IST`, `${unit.title}-taxonomy-PLT`];
+    navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
 
 
     rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
-    rootFolder?.file(`${unit.title}-taxonomy-ILT.json`, JSON.stringify(format_files.ILTFormatFile, null, 2));
-    rootFolder?.file(`${unit.title}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
-    rootFolder?.file(`${unit.title}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
-    rootFolder?.file(`${unit.title}-version-metadata.md`, returnVersionComment());
+    rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-ILT.json`, JSON.stringify(format_files.ILTFormatFile, null, 2));
+    rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
+    rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
+    rootFolder?.file(`${sanitizeFilename(unit.title)}-version-metadata.md`, returnVersionComment());
 
     // Generate and trigger download
     const content = await zip.generateAsync({ type: 'blob' });
@@ -337,7 +374,6 @@ const ExcelUploader: React.FC = () => {
     // unit:
     delete save_file.description;
     for (const activity of save_file.unitActivities) {
-      activity.type = getActivityCode(activity.activityType);
       setFormatBooleans(activity);
       updateActivityDescriptionAndInstructions(activity, save_file.title);
     }
@@ -346,7 +382,6 @@ const ExcelUploader: React.FC = () => {
     for (const module of save_file.modules) {
       delete module.description;
       for (const activity of module.moduleActivities) {
-        activity.type = getActivityCode(activity.activityType);
         setFormatBooleans(activity);
         updateActivityDescriptionAndInstructions(activity, save_file.title);
       }
@@ -355,7 +390,6 @@ const ExcelUploader: React.FC = () => {
       for (const topic of module.topics) {
         delete topic.description;
         for (const activity of topic.topicActivities) {
-          activity.type = getActivityCode(activity.activityType);
           setFormatBooleans(activity);
           updateActivityDescriptionAndInstructions(activity, save_file.title);
         }
