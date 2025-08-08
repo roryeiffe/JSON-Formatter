@@ -165,6 +165,7 @@ const ExcelUploader: React.FC = () => {
       };
 
       let unitName = unit.title.replace(/ Unit/g, '');
+      let unitNameWithHyphens = unitName.replace(/ /g, '-').toLowerCase();
 
       let url = row["Content URL"]?.trim();
 
@@ -178,6 +179,8 @@ const ExcelUploader: React.FC = () => {
           activity.activityURL = url;
           delete activity.activityPath; // Remove activityPath since we are not using it
         }
+
+
 
         // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
         else if (decodedPathName.includes(unitName.toLowerCase())) {
