@@ -183,7 +183,7 @@ const ExcelUploader: React.FC = () => {
 
 
         // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
-        else if (decodedPathName.includes(unitName.toLowerCase())) {
+        else if (decodedPathName.includes(unitName.toLowerCase()) || decodedPathName.includes(unitNameWithHyphens)) {
           // extract path from url:
           let path = parsedUrl.searchParams.get('path') || '';
           activity.activityPath = '.' + path;
