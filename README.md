@@ -62,3 +62,4 @@ bun run dev
 | V1.3  | 07/25/2025    | Modified JSON Formatter, renaming fields (skills -> skill, exitCriteria -> exitcriteria). Removed "difficulty" field from Exit Criteria. Populates activityUrl OR activityPath based on the type of activity and where the content is located.                               |
 | V1.4  |  08/01/2025  | Added functionality to pull in content from other Azure repos and include them in the downloaded zip file, while updating the activityPath field for the corresponding activities. | 
 | V1.5  | 08/08/2025 | Cleaned up the excel uploader, added more data validation (checking for empty titles when parsing the Excel and parsing URLs). Fixed bug where local content was being treated as external Azure content. |
+| V1.6  | 08/13/2025 | Updated the format/structure of activities' descriptions. |

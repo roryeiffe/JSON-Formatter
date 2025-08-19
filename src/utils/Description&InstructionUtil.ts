@@ -1,16 +1,29 @@
 // make map of activity types to generic description and instructions:
 const activityTypeToDescriptionMap: Record<string, string> = {
-  "Exam": "An exam that assesses you on <UNIT-NAME>",
-  "Lesson - Video": "A video lesson that covers certain topics from <UNIT-NAME>",
-  "Lesson - Learning Content": "A written lesson that contains information about topic(s) in <UNIT-NAME>, including description, examples, and a summary",
-  "Lesson - Live Lecture": "Trainer-facing instructions to be used for lecturing on <UNIT-NAME>",
-  "Reference": "An external resource that assists associates in understanding part or all of <UNIT-NAME>",
-  "Lab - Coding Lab": "A lab that allows associates to practice coding skills in <UNIT-NAME>",
-  "Lab - Coding Challenge": "A challenge that tests associates' coding skills in <UNIT-NAME>",
-  "Lab - Mini Project": "A mini project that allows associates to practice coding skills in <UNIT-NAME> in a practical way",
-  "Self Study": "A self-study activity that allows associates to learn about <UNIT-NAME> on their own",
-  "Office Hours": "A session where associates can ask questions about <UNIT-NAME> and get help from trainers or peers",
-  "Assignment": "An assignment that allows associates to practice coding skills in <UNIT-NAME>"
+  "Lesson - Video": "This video covers concepts related to <UNIT-NAME>",
+  "Lesson - Learning Content": "This written lesson covers concepts related to <UNIT-NAME>",
+  "Lesson - Live Lecture": "During this live lecture, your Revature trainer will discuss concepts related to <UNIT-NAME>",
+  "Reference": "Please review this additional resource, which is aimed to enhance your understanding of concepts related to <UNIT-NAME>.",
+  "Lab - Coding Lab": "This coding lab will give you a chance to practice your coding skills",
+  "Lab - Coding Challenge": "This coding challenge will give you a chance to hone your coding and problem solving skills. You may need to review other resources to solve this activity.",
+  "Lab - Mini Project": "This mini project will give you a chance to hone your coding skills in a real-world simulation",
+  "Self Study": "During this self-study session, you have the freedom to guide your own learning and practice on your own",
+  "Office Hours": "During this office hour session, you can ask questions and get help from your trainer or peers",
+  "Assignment": "This activity will give you a chance to get hands-on practice"
+}
+
+// make map of activity types to generic description and instructions:
+const activityTypeToDescriptionMapReview: Record<string, string> = {
+  "Lesson - Video": "This video covers previously covered concepts related to <UNIT-NAME>",
+  "Lesson - Learning Content": "This written lesson covers previously covered concepts related to <UNIT-NAME>",
+  "Lesson - Live Lecture": "During this live lecture, your Revature trainer will discuss previously covered concepts related to <UNIT-NAME>",
+  "Reference": "Please review this additional resource, which is aimed to enhance your understanding of previously covered concepts related to <UNIT-NAME>.",
+  "Lab - Coding Lab": "This coding lab will give you a chance to review your coding skills on previously covered concepts",
+  "Lab - Coding Challenge": "This coding challenge will give you a chance to further practice your coding and problem solving skills. You may need to review other resources to solve this activity.",
+  "Lab - Mini Project": "This mini project will give you a chance to review the concepts learned in a real-world simulation",
+  "Self Study": "During this self-study session, you have the freedom to guide your own learning and practice on your own",
+  "Office Hours": "During this office hour session, you can ask questions and get help from your trainer or peers",
+  "Assignment": "This activity will give you a chance to review previously covered concepts and get hands-on practice"
 }
 
 const activityTypeToInstructionMap: Record<string, string> = {
@@ -28,7 +41,10 @@ const activityTypeToInstructionMap: Record<string, string> = {
 
 export const updateActivityDescriptionAndInstructions = (activity: any, unitName: string) => {
   // Set description and instructions based on activity type
-  const description = activityTypeToDescriptionMap[activity.activityType]
+  let description: string | undefined;
+  if( activity.isReview ) description = activityTypeToDescriptionMapReview[activity.activityType]
+  else description = activityTypeToDescriptionMap[activity.activityType]
+
   const instructions = activityTypeToInstructionMap[activity.activityType]
 
   if (description) {
