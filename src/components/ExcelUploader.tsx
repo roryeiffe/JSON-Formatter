@@ -174,9 +174,10 @@ const ExcelUploader: React.FC = () => {
 
         const decodedPathName = decodeURIComponent(parsedUrl.pathname).toLowerCase();
 
+          activity.activityURL = url;
+
         // If the activityURL is not an azure link, delete activityPath field since it is not needed:
         if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
-          activity.activityURL = url;
           delete activity.activityPath; // Remove activityPath since we are not using it
         }
 
@@ -187,7 +188,6 @@ const ExcelUploader: React.FC = () => {
           // extract path from url:
           let path = parsedUrl.searchParams.get('path') || '';
           activity.activityPath = '.' + path;
-          delete activity.activityURL; // Remove activityURL since we are using activityPath now
         }
 
         else {
@@ -199,12 +199,10 @@ const ExcelUploader: React.FC = () => {
             const markdown = JSON.parse(content).content;
             externalActivities.push({ name: row["Activity Name"], content: markdown });
             activity.activityPath = `./external-activities/${activity.activityName}.md`;
-            delete activity.activityURL;
           } catch (error) {
             console.error(`Failed to fetch external activity content for URL: ${url}`, error);
             // Optional: set fallback data or mark activity as failed
             activity.activityPath = null; // or some placeholder
-            // You might want to push to externalActivities with empty content or skip it
           }
         }
       } catch (error) {
@@ -264,12 +262,13 @@ const ExcelUploader: React.FC = () => {
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
-          let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${encodedUnitName}?path=${activity.activityPath}`;
+          let activityUrl = activity.activityURL;
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
             'Activity Description: ' + activity.description;
           topicFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
+          if(activity.activityPath) delete activity.activityURL;
         }
         topicCount++;
 
@@ -277,11 +276,12 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${encodedUnitName}?path=${activity.activityPath}`;
+        let activityUrl = activity.activityURL;
         const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
+      if(activity.activityPath) delete activity.activityURL;
       }
       moduleCount++;
 
@@ -291,11 +291,12 @@ const ExcelUploader: React.FC = () => {
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      let activityUrl = activity.activityURL || `https://dev.azure.com/Revature-Technology/Technology-Engineering/_git/${encodedUnitName}?path=${activity.activityPath}`;
+      let activityUrl = activity.activityURL;
       const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
       rootFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
+      if(activity.activityPath) delete activity.activityURL;
     }
 
     navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
