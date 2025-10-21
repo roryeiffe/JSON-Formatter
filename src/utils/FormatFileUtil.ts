@@ -79,7 +79,6 @@ const filterActivitiesByFormat = (data: any, key: activityKey) => {
       });
     }
   }
-  console.log(data);
   return data;
 };
 
