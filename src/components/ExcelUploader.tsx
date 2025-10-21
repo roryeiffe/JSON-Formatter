@@ -197,7 +197,8 @@ const ExcelUploader: React.FC = () => {
             const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
             const content = res.data.content;
             const markdown = JSON.parse(content).content;
-            externalActivities.push({ name: row["Activity Name"], content: markdown });
+            const imgs = JSON.parse(content).imgs || [];
+            externalActivities.push({ name: row["Activity Name"], content: markdown, associatedImgs: imgs });
             activity.activityPath = `./external-activities/${activity.activityName}.md`;
           } catch (error) {
             console.error(`Failed to fetch external activity content for URL: ${url}`, error);
@@ -212,6 +213,11 @@ const ExcelUploader: React.FC = () => {
 
       if (!(activity.activityPath || activity.activityURL)) {
         console.error(`Activity "${activityName}" has no valid URL or path.`);
+      }
+
+      if(activity.activityType === 'Lab - Coding Lab') {
+        activity.githubRepositoryUrl = activity.activityURL;
+        delete activity.activityURL;
       }
 
       // === 4. Assign Activity based on Scope ===
@@ -241,6 +247,9 @@ const ExcelUploader: React.FC = () => {
     const externalActivitiesFolder = rootFolder?.folder('external-activities');
     for (const activity of externalActivities) {
       externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
+      for (const img of activity.associatedImgs) {
+        externalActivitiesFolder?.file(img.fileName, img.content);
+      }
     }
 
 
@@ -262,7 +271,7 @@ const ExcelUploader: React.FC = () => {
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
-          let activityUrl = activity.activityURL;
+          let activityUrl = activity.activityURL || activity.githubRepositoryUrl;
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
@@ -276,7 +285,7 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        let activityUrl = activity.activityURL;
+        let activityUrl = activity.activityURL || activity.githubRepositoryUrl;;
         const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
@@ -291,7 +300,7 @@ const ExcelUploader: React.FC = () => {
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      let activityUrl = activity.activityURL;
+      let activityUrl = activity.activityURL || activity.githubRepositoryUrl;
       const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
