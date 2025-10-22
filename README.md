@@ -64,3 +64,4 @@ bun run dev
 | V1.5  | 08/08/2025 | Cleaned up the excel uploader, added more data validation (checking for empty titles when parsing the Excel and parsing URLs). Fixed bug where local content was being treated as external Azure content. |
 | V1.6  | 08/13/2025 | Updated the format/structure of activities' descriptions. |
 | V1.7  | 08/28/2025 | Cleaned up logic surrounding the generation of meta-data files for activities so that the activityURL is being properly used. | 
+| V1.8  | 10/22/2025 | Added logic to fetching external Azure content so that it now pulls in images. Also modified Excel Uploader logic to set proper fields on coding lab activities. |
