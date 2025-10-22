@@ -63,6 +63,7 @@ type Activity = {
   isILT?: boolean,
   isIST?: boolean,
   isPLT?: boolean,
+  imgs?: any[],
 }
 
 type UnitActivity = Activity | {

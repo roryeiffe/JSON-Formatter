@@ -192,11 +192,12 @@ const ExcelUploader: React.FC = () => {
 
         else {
           try {
-            console.log("Fetching external activity content...");
-            console.log(url);
             const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
-            const content = res.data.content;
-            const markdown = JSON.parse(content).content;
+            const data = res.data;
+            const markdown = JSON.parse(data.content).content;
+            const imgs = data.imgs || [];
+
+            externalActivities.push({ name: row["Activity Name"], content: markdown, imgs });
             activity.activityPath = `./external-activities/${activity.activityName}.md`;
           } catch (error) {
             console.error(`Failed to fetch external activity content for URL: ${url}`, error);
@@ -244,9 +245,18 @@ const ExcelUploader: React.FC = () => {
 
     const externalActivitiesFolder = rootFolder?.folder('external-activities');
     for (const activity of externalActivities) {
+      for (const img of activity.imgs) {
+        img.newName = activity.name + 'Assets/' + img.name;
+        // replace all instances of the old image name in the markdown content with the new path
+        activity.content = activity.content.replace(new RegExp(img.name, 'g'), img.newName);
+        // save image data to the specified file name within the external-activities folder
+        externalActivitiesFolder?.file(img.newName, img.imgData ,{ base64: true });
+      }
       externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
       
     }
+
+    
 
 
     let moduleCount = 1;
