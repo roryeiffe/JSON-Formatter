@@ -214,6 +214,11 @@ const ExcelUploader: React.FC = () => {
         console.error(`Activity "${activityName}" has no valid URL or path.`);
       }
 
+      if(activity.activityType === 'Lab - Coding Lab') {
+        activity.githubRepositoryUrl = activity.activityURL;
+        delete activity.activityURL;
+      }
+
       // === 4. Assign Activity based on Scope ===
       const scope = row["Activity Scope"]?.trim().toLowerCase();
       if (scope === 'unit') {
@@ -248,6 +253,7 @@ const ExcelUploader: React.FC = () => {
         externalActivitiesFolder?.file(img.newName, img.imgData ,{ base64: true });
       }
       externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
+      
     }
 
     
@@ -271,7 +277,7 @@ const ExcelUploader: React.FC = () => {
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
-          let activityUrl = activity.activityURL;
+          let activityUrl = activity.activityURL || activity.githubRepositoryUrl;
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
@@ -285,7 +291,7 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        let activityUrl = activity.activityURL;
+        let activityUrl = activity.activityURL || activity.githubRepositoryUrl;;
         const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
@@ -300,7 +306,7 @@ const ExcelUploader: React.FC = () => {
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      let activityUrl = activity.activityURL;
+      let activityUrl = activity.activityURL || activity.githubRepositoryUrl;
       const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
