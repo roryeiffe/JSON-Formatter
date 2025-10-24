@@ -79,6 +79,12 @@ const ExcelUploader: React.FC = () => {
       // convert the Excel data to JSON, which will be used to generate the navigation JSON, the zip structure, and the save JSON
       const result = await parseTaxonomyExcel(taxonomyJson, unitName);
 
+      if(result.errorOccurredLocal) {
+        alert ("Some errors occurred while processing the activities. Please check the console for details.");
+        setLoading(false);
+        return;
+      }
+
       const parsedTaxonomy = result.unit;
       const externalActivities = result.externalActivities;
 
@@ -103,6 +109,8 @@ const ExcelUploader: React.FC = () => {
     };
 
     let externalActivities = [];
+
+    let errorOccurredLocal = false;
 
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
@@ -216,17 +224,20 @@ const ExcelUploader: React.FC = () => {
             externalActivities.push({ name: row["Activity Name"], content: markdown, imgs, gifts });
             activity.activityPath = `./external-activities/${activity.activityName}.md`;
           } catch (error) {
+            errorOccurredLocal = true;
             console.error(`Failed to fetch external activity content for URL: ${url}`, error);
             // Optional: set fallback data or mark activity as failed
             activity.activityPath = null; // or some placeholder
           }
         }
       } catch (error) {
+        errorOccurredLocal = true;
         console.error(`Invalid URL for activity "${activityName}":`, url);
         activity.activityURL = url;
       }
 
       if (!(activity.activityPath || activity.activityURL)) {
+        errorOccurredLocal = true;
         console.error(`Activity "${activityName}" has no valid URL or path.`);
       }
 
@@ -246,7 +257,7 @@ const ExcelUploader: React.FC = () => {
         console.warn(`Activity "${activityName}" has an invalid scope: [${scope}]`);
       }
     }
-    return { unit, externalActivities };
+    return { unit, externalActivities, errorOccurredLocal };
   };
 
 
@@ -298,10 +309,7 @@ const ExcelUploader: React.FC = () => {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
           let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
-          console.log(activityUrl);
-          if (!activityUrl) {
-            console.log(activity);
-          }
+          
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
@@ -339,6 +347,8 @@ const ExcelUploader: React.FC = () => {
     }
 
     navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
+
+    
 
 
     rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
