@@ -58,4 +58,9 @@ export const updateActivityDescriptionAndInstructions = (activity: any, unitName
   } else {
     console.warn(`No instructions found for activity type: ${activity.activityType}`)
   }
+
+  // remove activityURL if activityPath is present
+    if (activity.activityPath) {
+      activity.activityURL = '';
+    }
 }

@@ -59,7 +59,7 @@ type Activity = {
   githubRepositoryUrl?: string,
   vsCodeExtensions?: string,
   artifactAttachments: ArtifactAttachment[],
-  urlAttachments: URLAttachment[],
+  urlAttachments?: URLAttachment[],
   isILT?: boolean,
   isIST?: boolean,
   isPLT?: boolean,
@@ -141,7 +141,6 @@ type URLAttachment = {
   name: string,
   description: string,
   url: string,
-  tutorials: boolean
 }
 
 

@@ -14,7 +14,7 @@ import axios from 'axios';
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
   duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
-  vsCodeExtensions: '', artifactAttachments: [], urlAttachments: [], isILT: true, isIST: true, isPLT: true,
+  vsCodeExtensions: '', artifactAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
 
 const sanitizeFilename = (filename: string) => {
@@ -174,14 +174,29 @@ const ExcelUploader: React.FC = () => {
 
         const decodedPathName = decodeURIComponent(parsedUrl.pathname).toLowerCase();
 
-          activity.activityURL = url;
+        activity.activityURL = url;
+
+        // If the activityURL is an external link and not one of the standard domains, update the UrlAttachment field:
+        const standardDomains = ['dev.azure.com', 'github.com', 'vimeo.com', 'youtube.com' ];
+        const isStandardDomain = standardDomains.some(domain => parsedUrl.hostname.includes(domain));
+
+        if (!isStandardDomain) {
+          let currentTaxonomy = topicTitle || moduleTitle || unit.title;
+          let description;
+          if (activity.type === 'ACT007') description = `Reference material for ${activity.displayName}.`;
+          else description = `Additional resource for ${activity.displayName}.`;
+          const urlAttachment = {
+            name: `${activity.displayName} ${activity.type === 'ACT0062' ? 'Guide' : ''}`,
+            description,
+            url
+          };
+          activity.urlAttachments = [urlAttachment];
+        }
 
         // If the activityURL is not an azure link, delete activityPath field since it is not needed:
         if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
           delete activity.activityPath; // Remove activityPath since we are not using it
         }
-
-
 
         // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
         else if (decodedPathName.includes(unitName.toLowerCase()) || decodedPathName.includes(unitNameWithHyphens)) {
@@ -196,8 +211,9 @@ const ExcelUploader: React.FC = () => {
             const data = res.data;
             const markdown = JSON.parse(data.content).content;
             const imgs = data.imgs || [];
+            const gifts = data.gifts || [];
 
-            externalActivities.push({ name: row["Activity Name"], content: markdown, imgs });
+            externalActivities.push({ name: row["Activity Name"], content: markdown, imgs, gifts });
             activity.activityPath = `./external-activities/${activity.activityName}.md`;
           } catch (error) {
             console.error(`Failed to fetch external activity content for URL: ${url}`, error);
@@ -216,7 +232,6 @@ const ExcelUploader: React.FC = () => {
 
       if(activity.activityType === 'Lab - Coding Lab') {
         activity.githubRepositoryUrl = activity.activityURL;
-        delete activity.activityURL;
       }
 
       // === 4. Assign Activity based on Scope ===
@@ -248,9 +263,14 @@ const ExcelUploader: React.FC = () => {
       for (const img of activity.imgs) {
         img.newName = activity.name + 'Assets/' + img.name;
         // replace all instances of the old image name in the markdown content with the new path
-        activity.content = activity.content.replace(new RegExp(img.name, 'g'), img.newName);
+        activity.content = activity.content.replace(new RegExp(img.oldName, 'g'), img.newName);
         // save image data to the specified file name within the external-activities folder
         externalActivitiesFolder?.file(img.newName, img.imgData ,{ base64: true });
+      }
+      for (const gift of activity.gifts) {
+        gift.newName = activity.name + 'Assets/' + gift.name;
+        activity.content = activity.content.replace(new RegExp(gift.oldName, 'g'), gift.newName);
+        externalActivitiesFolder?.file(gift.newName, gift.giftData ,{ base64: true });
       }
       externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
       
@@ -277,7 +297,11 @@ const ExcelUploader: React.FC = () => {
         for (const activity of topic.topicActivities) {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
-          let activityUrl = activity.activityURL || activity.githubRepositoryUrl;
+          let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
+          console.log(activityUrl);
+          if (!activityUrl) {
+            console.log(activity);
+          }
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
@@ -291,12 +315,12 @@ const ExcelUploader: React.FC = () => {
 
       for (const activity of module.moduleActivities) {
         updateActivityDescriptionAndInstructions(activity, unit.title);
-        let activityUrl = activity.activityURL || activity.githubRepositoryUrl;;
+        let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
         const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-      if(activity.activityPath) delete activity.activityURL;
+        if(activity.activityPath) delete activity.activityURL;
       }
       moduleCount++;
 
@@ -306,7 +330,7 @@ const ExcelUploader: React.FC = () => {
 
     for (const activity of unit.unitActivities) {
       updateActivityDescriptionAndInstructions(activity, unit.title);
-      let activityUrl = activity.activityURL || activity.githubRepositoryUrl;
+      let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
       const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
