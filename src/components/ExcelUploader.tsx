@@ -262,6 +262,7 @@ const ExcelUploader: React.FC = () => {
         currentTopic.topicActivities.push(activity);
       } else {
         console.warn(`Activity "${activityName}" has an invalid scope: [${scope}]`);
+        errorOccurredLocal = true;
       }
     }
     return { unit, externalActivities, errorOccurredLocal };
