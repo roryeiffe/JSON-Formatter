@@ -79,8 +79,8 @@ const ExcelUploader: React.FC = () => {
       // convert the Excel data to JSON, which will be used to generate the navigation JSON, the zip structure, and the save JSON
       const result = await parseTaxonomyExcel(taxonomyJson, unitName);
 
-      if(result.errorOccurredLocal) {
-        alert ("Some errors occurred while processing the activities. Please check the console for details.");
+      if (result.errorOccurredLocal) {
+        alert("Some errors occurred while processing the activities. Please check the console for details.");
         setLoading(false);
         return;
       }
@@ -177,71 +177,78 @@ const ExcelUploader: React.FC = () => {
 
       let url = row["Content URL"]?.trim();
 
-      try {
-        const parsedUrl = new URL(url);
+      if (url) {
+        try {
+          const parsedUrl = new URL(url);
 
-        const decodedPathName = decodeURIComponent(parsedUrl.pathname).toLowerCase();
+          const decodedPathName = decodeURIComponent(parsedUrl.pathname).toLowerCase();
 
-        activity.activityURL = url;
+          activity.activityURL = url;
 
-        // If the activityURL is an external link and not one of the standard domains, update the UrlAttachment field:
-        const standardDomains = ['dev.azure.com', 'github.com', 'vimeo.com', 'youtube.com' ];
-        const isStandardDomain = standardDomains.some(domain => parsedUrl.hostname.includes(domain));
+          // If the activityURL is an external link and not one of the standard domains, update the UrlAttachment field:
+          const standardDomains = ['dev.azure.com', 'github.com', 'vimeo.com', 'youtube.com'];
+          const isStandardDomain = standardDomains.some(domain => parsedUrl.hostname.includes(domain));
 
-        if (!isStandardDomain) {
-          let currentTaxonomy = topicTitle || moduleTitle || unit.title;
-          let description;
-          if (activity.type === 'ACT007') description = `Reference material for ${activity.displayName}.`;
-          else description = `Additional resource for ${activity.displayName}.`;
-          const urlAttachment = {
-            name: `${activity.displayName} ${activity.type === 'ACT0062' ? 'Guide' : ''}`,
-            description,
-            url
-          };
-          activity.urlAttachments = [urlAttachment];
-        }
-
-        // If the activityURL is not an azure link, delete activityPath field since it is not needed:
-        if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
-          delete activity.activityPath; // Remove activityPath since we are not using it
-        }
-
-        // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
-        else if (decodedPathName.includes(unitName.toLowerCase()) || decodedPathName.includes(unitNameWithHyphens)) {
-          // extract path from url:
-          let path = parsedUrl.searchParams.get('path') || '';
-          activity.activityPath = '.' + path;
-        }
-
-        else {
-          try {
-            const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
-            const data = res.data;
-            const markdown = JSON.parse(data.content).content;
-            const imgs = data.imgs || [];
-            const gifts = data.gifts || [];
-
-            externalActivities.push({ name: row["Activity Name"], content: markdown, imgs, gifts });
-            activity.activityPath = `./external-activities/${activity.activityName}.md`;
-          } catch (error) {
-            errorOccurredLocal = true;
-            console.error(`Failed to fetch external activity content for URL: ${url}`, error);
-            // Optional: set fallback data or mark activity as failed
-            activity.activityPath = null; // or some placeholder
+          if (!isStandardDomain) {
+            let currentTaxonomy = topicTitle || moduleTitle || unit.title;
+            let description;
+            if (activity.type === 'ACT007') description = `Reference material for ${activity.displayName}.`;
+            else description = `Additional resource for ${activity.displayName}.`;
+            const urlAttachment = {
+              name: `${activity.displayName} ${activity.type === 'ACT0062' ? 'Guide' : ''}`,
+              description,
+              url
+            };
+            activity.urlAttachments = [urlAttachment];
           }
-        }
-      } catch (error) {
-        errorOccurredLocal = true;
-        console.error(`Invalid URL for activity "${activityName}":`, url);
-        activity.activityURL = url;
-      }
 
-      if (!(activity.activityPath || activity.activityURL)) {
+          // If the activityURL is not an azure link, delete activityPath field since it is not needed:
+          if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
+            delete activity.activityPath; // Remove activityPath since we are not using it
+          }
+
+          // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
+          else if (decodedPathName.includes(unitName.toLowerCase()) || decodedPathName.includes(unitNameWithHyphens)) {
+            // extract path from url:
+            let path = parsedUrl.searchParams.get('path') || '';
+            activity.activityPath = '.' + path;
+          }
+
+          else {
+            try {
+              const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
+              const data = res.data;
+              const markdown = JSON.parse(data.content).content;
+              const imgs = data.imgs || [];
+              const gifts = data.gifts || [];
+
+              externalActivities.push({ name: row["Activity Name"], content: markdown, imgs, gifts });
+              activity.activityPath = `./external-activities/${activity.activityName}.md`;
+            } catch (error) {
+              errorOccurredLocal = true;
+              console.error(`Failed to fetch external activity content for URL: ${url}`, error);
+              // Optional: set fallback data or mark activity as failed
+              activity.activityPath = null; // or some placeholder
+            }
+          }
+        } catch (error) {
+          errorOccurredLocal = true;
+          console.error(error);
+          console.error(`Invalid URL for activity "${activityName}":`, url);
+          activity.activityURL = url;
+        }
+
+        if (!(activity.activityPath || activity.activityURL)) {
         errorOccurredLocal = true;
         console.error(`Activity "${activityName}" has no valid URL or path.`);
       }
+      }
 
-      if(activity.activityType === 'Lab - Coding Lab') {
+
+
+      
+
+      if (activity.activityType === 'Lab - Coding Lab') {
         activity.githubRepositoryUrl = activity.activityURL;
       }
 
@@ -276,18 +283,18 @@ const ExcelUploader: React.FC = () => {
         // replace all instances of the old image name in the markdown content with the new path
         activity.content = activity.content.replace(new RegExp(img.oldName, 'g'), img.newName);
         // save image data to the specified file name within the external-activities folder
-        externalActivitiesFolder?.file(img.newName, img.imgData ,{ base64: true });
+        externalActivitiesFolder?.file(img.newName, img.imgData, { base64: true });
       }
       for (const gift of activity.gifts) {
         gift.newName = activity.name + 'Assets/' + gift.name;
         activity.content = activity.content.replace(new RegExp(gift.oldName, 'g'), gift.newName);
-        externalActivitiesFolder?.file(gift.newName, gift.giftData ,{ base64: true });
+        externalActivitiesFolder?.file(gift.newName, gift.giftData, { base64: true });
       }
       externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
-      
+
     }
 
-    
+
 
 
     let moduleCount = 1;
@@ -309,13 +316,13 @@ const ExcelUploader: React.FC = () => {
           updateActivityDescriptionAndInstructions(activity, unit.title);
 
           let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
-          
+
 
           const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
             'Activity URL: ' + activityUrl + '\n' +
             'Activity Description: ' + activity.description;
           topicFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-          if(activity.activityPath) delete activity.activityURL;
+          if (activity.activityPath) delete activity.activityURL;
         }
         topicCount++;
 
@@ -328,7 +335,7 @@ const ExcelUploader: React.FC = () => {
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-        if(activity.activityPath) delete activity.activityURL;
+        if (activity.activityPath) delete activity.activityURL;
       }
       moduleCount++;
 
@@ -343,12 +350,12 @@ const ExcelUploader: React.FC = () => {
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
       rootFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-      if(activity.activityPath) delete activity.activityURL;
+      if (activity.activityPath) delete activity.activityURL;
     }
 
     navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
 
-    
+
 
 
     rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
