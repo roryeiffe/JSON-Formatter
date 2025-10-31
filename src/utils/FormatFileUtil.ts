@@ -26,19 +26,19 @@ const removeFormatTags = (unit: any) => {
 }
 
 // Call the downloadTaxonomy functions for each format (ILT, PLT, IST)
-const downloadTaxonomyAllFormats = (unit: any) => {
+const downloadTaxonomyAllFormats = (unit: any, activityIds: any) => {
   return {
-    'ILTFormatFile': downloadTaxonomyOneFormat('isILT', 'IN03', unit),
-    'ISTFormatFile': downloadTaxonomyOneFormat('isIST', 'IN02', unit),
-    'PLTFormatFile': downloadTaxonomyOneFormat('isPLT', 'IN01', unit),
+    'ILTFormatFile': downloadTaxonomyOneFormat('isILT', 'IN03', unit, activityIds),
+    'ISTFormatFile': downloadTaxonomyOneFormat('isIST', 'IN02', unit, activityIds),
+    'PLTFormatFile': downloadTaxonomyOneFormat('isPLT', 'IN01', unit, activityIds),
   }
 }
 
 // download the format file for one specific format:
-const downloadTaxonomyOneFormat = (key: activityKey, code: string, unitTaxonomy: any) => {
+const downloadTaxonomyOneFormat = (key: activityKey, code: string, unitTaxonomy: any, activityIds: any) => {
   if (!unitTaxonomy) return;
   // only grab activities for the designated format:
-  let dataFiltered: any = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(unitTaxonomy, null, 2))), key);
+  let dataFiltered: any = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(unitTaxonomy, null, 2))), key, activityIds);
 
   // TODO: remove unwanted fields (isPLT, isILT, etc.)
   dataFiltered = removeFormatTags(dataFiltered);
@@ -52,11 +52,13 @@ const downloadTaxonomyOneFormat = (key: activityKey, code: string, unitTaxonomy:
 
 // given a unit and a key, only keep those activities where the key evaluates to true
 // example usage: filterActivitesByFormat(data, 'isPLT') -- would only keep PLT activities:
-const filterActivitiesByFormat = (data: any, key: activityKey) => {
+const filterActivitiesByFormat = (data: any, key: activityKey, activityIds: any) => {
+  // format is 3 last characters of activityKey:
+  const format = key.slice(-3).toUpperCase();
   // Unit Level
   data.unitActivities = data.unitActivities?.filter((activity: any) => activity[key])
   data.unitActivities = data.unitActivities?.map((activity: any) => {
-    activity.activityId = IDsGeneratorRandom();
+    activity.activityId = activityIds[activity.activityName + format] || IDsGeneratorRandom();
     return activity;
   });
 
@@ -64,7 +66,7 @@ const filterActivitiesByFormat = (data: any, key: activityKey) => {
   for (let i = 0; i < data.modules.length; i++) {
     data.modules[i].moduleActivities = data.modules[i].moduleActivities?.filter((activity: any) => activity[key]);
     data.modules[i].moduleActivities = data.modules[i].moduleActivities?.map((activity: any) => {
-      activity.activityId = IDsGeneratorRandom();
+      activity.activityId = activityIds[activity.activityName + format] || IDsGeneratorRandom();
       return activity;
     });
   }
@@ -74,7 +76,7 @@ const filterActivitiesByFormat = (data: any, key: activityKey) => {
     for (let j = 0; j < data.modules[i].topics.length; j++) {
       data.modules[i].topics[j].topicActivities = data.modules[i].topics[j].topicActivities?.filter((activity: any) => activity[key])
       data.modules[i].topics[j].topicActivities = data.modules[i].topics[j].topicActivities?.map((activity: any) => {
-        activity.activityId = IDsGeneratorRandom();
+        activity.activityId = activityIds[activity.activityName + format] || IDsGeneratorRandom();
         return activity;
       });
     }
