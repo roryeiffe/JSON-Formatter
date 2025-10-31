@@ -110,10 +110,16 @@ const ExcelUploader: React.FC = () => {
 
     let activityIds:any = {};
 
+    try {
+      
     // fetch existing activity ids, if exist:
     activityIds = (await axios.post(`${PRODUCTION_URL}/fetch-activity-ids`, { unitName : unit.title })).data;
+    } catch (error) {
+      alert("Failed to fetch existing activity IDs. New IDs will be generated for all activities.");
+      console.error("Failed to fetch existing activity IDs:", error);
+    }
 
-    console.log(activityIds);
+    
 
 
     let externalActivities = [];
