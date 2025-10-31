@@ -65,3 +65,4 @@ bun run dev
 | V1.6  | 08/13/2025 | Updated the format/structure of activities' descriptions. |
 | V1.7  | 08/28/2025 | Cleaned up logic surrounding the generation of meta-data files for activities so that the activityURL is being properly used. | 
 | V1.8  | 10/22/2025 | Added logic to fetching external Azure content so that it now pulls in images. Also modified Excel Uploader logic to set proper fields on coding lab activities. |
+| V1.9  | 10/31/2025 | Added logic to check if there are any existing ids for the activities and if so, uses them instead of generating new ids. |
