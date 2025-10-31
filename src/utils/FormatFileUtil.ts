@@ -27,10 +27,19 @@ const removeFormatTags = (unit: any) => {
 
 // Call the downloadTaxonomy functions for each format (ILT, PLT, IST)
 const downloadTaxonomyAllFormats = (unit: any, activityIds: any) => {
+  let data1 = downloadTaxonomyOneFormat('isILT', 'IN03', unit, activityIds);
+  let data2 = downloadTaxonomyOneFormat('isIST', 'IN02', unit, activityIds);
+  let data3 = downloadTaxonomyOneFormat('isPLT', 'IN01', unit, activityIds);
+
+  let unfoundActivities = [...data1!.unfoundActivities, ...data2!.unfoundActivities, ...data3!.unfoundActivities];
+  if (unfoundActivities.length > 0) {
+    console.warn(`Warning: The following activities were not found in the ID mapping and have been assigned random IDs: ${unfoundActivities.join(', ')}`);
+    alert(`Some activities were not found in the ID mapping and have been assigned random IDs. Please check the console for details.`);
+  }
   return {
-    'ILTFormatFile': downloadTaxonomyOneFormat('isILT', 'IN03', unit, activityIds),
-    'ISTFormatFile': downloadTaxonomyOneFormat('isIST', 'IN02', unit, activityIds),
-    'PLTFormatFile': downloadTaxonomyOneFormat('isPLT', 'IN01', unit, activityIds),
+    'ILTFormatFile': data1?.taxonomy,
+    'ISTFormatFile': data2?.taxonomy,
+    'PLTFormatFile': data3?.taxonomy,
   }
 }
 
@@ -38,8 +47,9 @@ const downloadTaxonomyAllFormats = (unit: any, activityIds: any) => {
 const downloadTaxonomyOneFormat = (key: activityKey, code: string, unitTaxonomy: any, activityIds: any) => {
   if (!unitTaxonomy) return;
   // only grab activities for the designated format:
-  let dataFiltered: any = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(unitTaxonomy, null, 2))), key, activityIds);
-
+  let data: any = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(unitTaxonomy, null, 2))), key, activityIds);
+  let dataFiltered = data.data;
+  let unfoundActivities = data.unfound;
   // TODO: remove unwanted fields (isPLT, isILT, etc.)
   dataFiltered = removeFormatTags(dataFiltered);
 
@@ -47,18 +57,24 @@ const downloadTaxonomyOneFormat = (key: activityKey, code: string, unitTaxonomy:
   dataFiltered.version = "v1.0";
   dataFiltered.name = dataFiltered.title;
 
-  return dataFiltered;
+  return {taxonomy: dataFiltered, unfoundActivities};
 }
 
 // given a unit and a key, only keep those activities where the key evaluates to true
 // example usage: filterActivitesByFormat(data, 'isPLT') -- would only keep PLT activities:
 const filterActivitiesByFormat = (data: any, key: activityKey, activityIds: any) => {
+  let unfound:any = [];
   // format is 3 last characters of activityKey:
   const format = key.slice(-3).toUpperCase();
   // Unit Level
   data.unitActivities = data.unitActivities?.filter((activity: any) => activity[key])
   data.unitActivities = data.unitActivities?.map((activity: any) => {
-    activity.activityId = activityIds[activity.activityName + format] || IDsGeneratorRandom();
+    let newId = activityIds[activity.activityName + format];
+    if(!newId) {
+        unfound.push(activity.activityName + format);
+        newId = IDsGeneratorRandom();
+    }
+    activity.activityId = newId;
     return activity;
   });
 
@@ -81,7 +97,7 @@ const filterActivitiesByFormat = (data: any, key: activityKey, activityIds: any)
       });
     }
   }
-  return data;
+  return {data, unfound}
 };
 
 
