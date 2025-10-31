@@ -247,6 +247,7 @@ const ExcelUploader: React.FC = () => {
           }
         } catch (error) {
           errorOccurredLocal = true;
+          console.log(url);
           console.error(error);
           console.error(`Invalid URL for activity "${activityName}":`, url);
           activity.activityURL = url;
