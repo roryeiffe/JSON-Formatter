@@ -61,7 +61,7 @@ const ExcelUploader: React.FC = () => {
       // remove (n) from end:
       unitName = unitName.replace(/\s*\(\d+\)\s*$/, '');
 
-      const endings = ["Unit Breakdown", "Structure"];
+      const endings = ["Unit Breakdown", "Structure", "Unit"];
       // remove "Unit Breakdown" or "Structure" from the unit name if it exists
       for (const ending of endings) {
         if (unitName.endsWith(ending)) {
@@ -90,7 +90,7 @@ const ExcelUploader: React.FC = () => {
 
       // 
       const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
-      const format_files = await addActivityFields(structuredClone(parsedTaxonomy));
+      const format_files = await addActivityFields(structuredClone(parsedTaxonomy), result.activityIds);
 
       // download the artifacts:
       generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json, externalActivities);
@@ -107,6 +107,14 @@ const ExcelUploader: React.FC = () => {
       title: fileName,
       description: '',
     };
+
+    let activityIds:any = {};
+
+    // fetch existing activity ids, if exist:
+    activityIds = (await axios.post(`${PRODUCTION_URL}/fetch-activity-ids`, { unitName : unit.title })).data;
+
+    console.log(activityIds);
+
 
     let externalActivities = [];
 
@@ -154,7 +162,7 @@ const ExcelUploader: React.FC = () => {
       }
 
       // === 3. Parse the Activity ===
-      let activityName = row["Activity Name"]?.trim();
+      let activityName:string = row["Activity Name"]?.trim();
       if (!activityName) continue;
 
       // Remove invalid filesystem characters from activityName
@@ -163,7 +171,7 @@ const ExcelUploader: React.FC = () => {
       // Initialize an empty activity:
       const activity: any = {
         ...EMPTY_ACTIVITY,
-        activityId: IDsGeneratorRandom(),
+        activityId: await IDsGenerator(activityName),
         activityName,
         displayName: row["Display Name"]?.trim(),
         activityType: row["Activity Type"],
@@ -265,7 +273,7 @@ const ExcelUploader: React.FC = () => {
         errorOccurredLocal = true;
       }
     }
-    return { unit, externalActivities, errorOccurredLocal };
+    return { unit, externalActivities, errorOccurredLocal, activityIds };
   };
 
 
@@ -426,7 +434,7 @@ const ExcelUploader: React.FC = () => {
   };
 
 
-  const addActivityFields = async (parsedTaxonomy: any) => {
+  const addActivityFields = async (parsedTaxonomy: any, activityIds: any) => {
     let save_file = structuredClone(parsedTaxonomy);
 
     // unit:
@@ -458,7 +466,7 @@ const ExcelUploader: React.FC = () => {
 
     downloadFile('Use-This-To-Update-Activities.json', save_file);
 
-    return downloadTaxonomyAllFormats(save_file);
+    return downloadTaxonomyAllFormats(save_file, activityIds);
   };
 
   return (
