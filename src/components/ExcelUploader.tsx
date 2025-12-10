@@ -103,7 +103,7 @@ const ExcelUploader: React.FC = () => {
     const unit: any = {
       modules: [],
       unitActivities: [],
-      id: await IDsGenerator(fileName),
+      id: IDsGeneratorRandom(),
       title: fileName,
       description: '',
     };
@@ -263,8 +263,10 @@ const ExcelUploader: React.FC = () => {
 
       
 
-      if (activity.activityType === 'Lab - Coding Lab') {
+      if (activity.activityType.startsWith("Lab -")) {
         activity.githubRepositoryUrl = activity.activityURL;
+        delete activity.activityURL;
+        
       }
 
       // === 4. Assign Activity based on Scope ===
@@ -338,7 +340,7 @@ const ExcelUploader: React.FC = () => {
             'Activity URL: ' + activityUrl + '\n' +
             'Activity Description: ' + activity.description;
           topicFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-          if (activity.activityPath) delete activity.activityURL;
+          if (activity.activityPath || activity.githubRepositoryUrl) delete activity.activityURL;
         }
         topicCount++;
 
@@ -351,7 +353,7 @@ const ExcelUploader: React.FC = () => {
           'Activity URL: ' + activityUrl + '\n' +
           'Activity Description: ' + activity.description;
         moduleFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-        if (activity.activityPath) delete activity.activityURL;
+        if (activity.activityPath || activity.githubRepositoryUrl) delete activity.activityURL;
       }
       moduleCount++;
 
@@ -366,7 +368,7 @@ const ExcelUploader: React.FC = () => {
         'Activity URL: ' + activityUrl + '\n' +
         'Activity Description: ' + activity.description;
       rootFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-      if (activity.activityPath) delete activity.activityURL;
+      if (activity.activityPath || activity.githubRepositoryUrl) delete activity.activityURL;
     }
 
     navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];

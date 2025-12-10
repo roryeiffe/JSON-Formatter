@@ -12,17 +12,17 @@ const activityToCodeMap: Record<string, string> = {
   "Assignment": "ACT009"
 }
 
-export const getActivityCode = (activity: string): string => {
-  const code = activityToCodeMap[activity]
+export const getActivityCode = (activityType: string): string => {
+  const code = activityToCodeMap[activityType]
   if (!code) {
-    alert("Activity code not found for activity: " + activity)
-    throw new Error(`Activity code not found for activity: ${activity}`)
+    alert("Activity code not found for activity: " + activityType)
+    throw new Error(`Activity code not found for activity: ${activityType}`)
   }
   return code
 }
 
-const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours"];
-const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge"]
+const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours", "Lesson - Video"];
+const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Video", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge"]
 const PLTActivityTypes = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours","Reference", "Lesson - Video"]
 const PLTReviewTypes   = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Reference", "Lesson - Video"]
 
