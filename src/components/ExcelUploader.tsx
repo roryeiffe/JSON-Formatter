@@ -10,6 +10,7 @@ import { updateActivityDescriptionAndInstructions } from '../utils/Description&I
 import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
 import { returnVersionComment } from '../utils/VersionTracker';
 import axios from 'axios';
+import { dummyActivities } from '../utils/DummyActivities';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -126,6 +127,10 @@ const ExcelUploader: React.FC = () => {
 
     let errorOccurredLocal = false;
 
+    // keep track of activity types that have corresponding dummy activities created:
+    let dummyActivityTypes = new Set()
+    let found_empty_activity = false;
+
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
       const topicTitle = row.Topic?.trim();
@@ -191,6 +196,7 @@ const ExcelUploader: React.FC = () => {
 
       let url = row["Content URL"]?.trim();
 
+      // if there is a valid URL, process it:
       if (url) {
         try {
           const parsedUrl = new URL(url);
@@ -257,9 +263,24 @@ const ExcelUploader: React.FC = () => {
         errorOccurredLocal = true;
         console.error(`Activity "${activityName}" has no valid URL or path.`);
       }
+      }     
+      // if there is no valid URL, create a dummy activity (if none exists for this type yet)
+      else {
+        found_empty_activity = true;
+        const activityType = row["Activity Type"];
+        let markdownContent = dummyActivities[activityType];
+        if (!markdownContent) {
+          markdownContent = "## This is a Dummy Activity\n\n" + markdownContent;
+        }
+        const dummyFileName = `${activityType.replace(/[^a-zA-Z0-9]/g, '')}-dummy`;
+        if (!dummyActivityTypes.has(activityType)) {
+          // create a markdown file for this dummy activity
+            externalActivities.push({ name: dummyFileName, content: markdownContent, imgs: [], gifts: [] });
+            dummyActivityTypes.add(activityType);
+        }
+          activity.activityPath = `./external-activities/${dummyFileName}.md`;
+          delete activity.activityURL;
       }
-
-
 
       
 
@@ -282,6 +303,11 @@ const ExcelUploader: React.FC = () => {
         errorOccurredLocal = true;
       }
     }
+
+    if (found_empty_activity) {
+        alert("Some activities were missing URLs and have been replaced with dummy activities. Please check the external-activities folder in the generated zip.");
+    }
+    
     return { unit, externalActivities, errorOccurredLocal, activityIds };
   };
 
