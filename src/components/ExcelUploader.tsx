@@ -429,7 +429,13 @@ const ExcelUploader: React.FC = () => {
 
     navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
 
+    if (!formatsToDownload.IST) {
+      navigation_json.templates = navigation_json.templates.filter((template: string) => !template.endsWith('-IST'));
+    }
 
+    if (!formatsToDownload.PLT) {
+      navigation_json.templates = navigation_json.templates.filter((template: string) => !template.endsWith('-PLT'));
+    }
 
 
     rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
