@@ -61,6 +61,6 @@ export const updateActivityDescriptionAndInstructions = (activity: any, unitName
 
   // remove activityURL if activityPath is present
     if (activity.activityPath) {
-      activity.activityURL = '';
+      delete activity.activityURL;
     }
 }

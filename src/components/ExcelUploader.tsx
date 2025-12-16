@@ -10,6 +10,7 @@ import { updateActivityDescriptionAndInstructions } from '../utils/Description&I
 import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
 import { returnVersionComment } from '../utils/VersionTracker';
 import axios from 'axios';
+import { dummyActivities } from '../utils/DummyActivities';
 
 const EMPTY_ACTIVITY: Activity = {
   activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
@@ -87,13 +88,14 @@ const ExcelUploader: React.FC = () => {
 
       const parsedTaxonomy = result.unit;
       const externalActivities = result.externalActivities;
+      const formatsToDownload = result.formatsToDownload;
 
       // 
       const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
       const format_files = await addActivityFields(structuredClone(parsedTaxonomy), result.activityIds);
 
       // download the artifacts:
-      generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json, externalActivities);
+      generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json, externalActivities, formatsToDownload);
     };
 
     reader.readAsBinaryString(file);
@@ -108,23 +110,30 @@ const ExcelUploader: React.FC = () => {
       description: '',
     };
 
-    let activityIds:any = {};
+    let activityIds: any = {};
 
     try {
-      
-    // fetch existing activity ids, if exist:
-    activityIds = (await axios.post(`${PRODUCTION_URL}/fetch-activity-ids`, { unitName : unit.title })).data;
+
+      // fetch existing activity ids, if exist:
+      activityIds = (await axios.post(`${PRODUCTION_URL}/fetch-activity-ids`, { unitName: unit.title })).data;
     } catch (error) {
       alert("Failed to fetch existing activity IDs. New IDs will be generated for all activities.");
       console.error("Failed to fetch existing activity IDs:", error);
     }
 
-    
+
 
 
     let externalActivities = [];
 
     let errorOccurredLocal = false;
+
+    // keep track of activity types that have corresponding dummy activities created:
+    let dummyActivityTypes = new Set()
+    let found_empty_activity = false;
+
+    let emptyActivityCount = 0;
+    let nonEmptyActivityCount = 0;
 
     for (const row of raw_json) {
       const moduleTitle = row.Module?.trim();
@@ -168,7 +177,7 @@ const ExcelUploader: React.FC = () => {
       }
 
       // === 3. Parse the Activity ===
-      let activityName:string = row["Activity Name"]?.trim();
+      let activityName: string = row["Activity Name"]?.trim();
       if (!activityName) continue;
 
       // Remove invalid filesystem characters from activityName
@@ -191,7 +200,9 @@ const ExcelUploader: React.FC = () => {
 
       let url = row["Content URL"]?.trim();
 
+      // if there is a valid URL, process it:
       if (url) {
+        nonEmptyActivityCount++;
         try {
           const parsedUrl = new URL(url);
 
@@ -254,19 +265,54 @@ const ExcelUploader: React.FC = () => {
         }
 
         if (!(activity.activityPath || activity.activityURL)) {
-        errorOccurredLocal = true;
-        console.error(`Activity "${activityName}" has no valid URL or path.`);
+          errorOccurredLocal = true;
+          console.error(`Activity "${activityName}" has no valid URL or path.`);
+        }
       }
+      // if there is no valid URL, create a dummy activity (if none exists for this type yet)
+      else {
+        emptyActivityCount++;
+        const activityType = row["Activity Type"];
+
+        if (activityType === "Lesson - Video") {
+          activity.activityURL = "https://vimeo.com/1146990738";
+        }
+
+        else if (activityType === "Reference") {
+          activity.urlAttachments = [{
+            name: `${activity.displayName} Guide`,
+            description: `Reference material for ${activity.displayName}.`,
+            url: 'https://coda.io/d/_d_FyQRVQKou/Reference-Activity_su3JMcEv'
+          }];
+        }
+
+        else {
+          let markdownContent = dummyActivities[activityType];
+          if (!markdownContent) {
+            markdownContent = "## This is a Dummy Activity\n\n" + markdownContent;
+          }
+          const dummyFileName = `${activityType.replace(/[^a-zA-Z0-9]/g, '')}-dummy`;
+          if (!dummyActivityTypes.has(activityType)) {
+            // create a markdown file for this dummy activity
+            externalActivities.push({ name: dummyFileName, content: markdownContent, imgs: [], gifts: [] });
+            dummyActivityTypes.add(activityType);
+          }
+          activity.activityPath = `./external-activities/${dummyFileName}.md`;
+
+          delete activity.activityURL;
+        }
+
+
+
+
       }
 
 
-
-      
 
       if (activity.activityType.startsWith("Lab -")) {
         activity.githubRepositoryUrl = activity.activityURL;
         delete activity.activityURL;
-        
+
       }
 
       // === 4. Assign Activity based on Scope ===
@@ -282,13 +328,23 @@ const ExcelUploader: React.FC = () => {
         errorOccurredLocal = true;
       }
     }
-    return { unit, externalActivities, errorOccurredLocal, activityIds };
+
+    if (emptyActivityCount > 0) {
+      alert("Some activities were missing URLs and have been replaced with dummy activities. Please check the external-activities folder in the generated zip.");
+    }
+
+    let formatsToDownload = {
+      ILT: true,
+      IST: nonEmptyActivityCount > 0,
+      PLT: emptyActivityCount === 0
+    }
+
+    return { unit, externalActivities, errorOccurredLocal, activityIds, formatsToDownload };
   };
 
 
 
-  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any, externalActivities: any) => {
-    const encodedUnitName = encodeURIComponent(unitName);
+  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any, externalActivities: any, formatsToDownload: any) => {
 
     const zip = new JSZip();
     const rootFolder = zip.folder(unitName || 'unit');
@@ -373,13 +429,19 @@ const ExcelUploader: React.FC = () => {
 
     navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
 
+    if (!formatsToDownload.IST) {
+      navigation_json.templates = navigation_json.templates.filter((template: string) => !template.endsWith('-IST'));
+    }
 
+    if (!formatsToDownload.PLT) {
+      navigation_json.templates = navigation_json.templates.filter((template: string) => !template.endsWith('-PLT'));
+    }
 
 
     rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
     rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-ILT.json`, JSON.stringify(format_files.ILTFormatFile, null, 2));
-    rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
-    rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
+    if (formatsToDownload.IST) rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
+    if (formatsToDownload.PLT) rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
     rootFolder?.file(`${sanitizeFilename(unit.title)}-version-metadata.md`, returnVersionComment());
 
     // Generate and trigger download
