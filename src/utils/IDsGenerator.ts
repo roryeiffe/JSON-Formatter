@@ -1,4 +1,4 @@
-
+import { ParseContext } from "../types";
 
 export const IDsGenerator = async (title: string): Promise<string> => {
 
@@ -18,4 +18,13 @@ export const IDsGeneratorRandom = (): string => {
     const formattedID = hashHex.replace(/(.{8})/g, '$1-').slice(0, 35);
     return formattedID;
 }
+
+export async function getId(ctx: ParseContext, key: string): Promise<string> {
+  const cached = ctx.idCache.get(key);
+  if (cached) return cached;
+  const id = await IDsGenerator(key);
+  ctx.idCache.set(key, id);
+  return id;
+}
+
   

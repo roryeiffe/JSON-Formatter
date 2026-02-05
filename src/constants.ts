@@ -1,3 +1,5 @@
+import { Activity } from "./types"
+
 const OFFICE_HOURS_DUMMY = `
 # Office Hours
 
@@ -30,4 +32,10 @@ export const dummyActivities: {[key: string]: any} = {
   "Self Study": "## This is a Dummy Self Study Activity\n\nThis activity is a placeholder for a self study activity",
   "Lesson - Live Lecture": "## This is a Dummy Live Lecture Activity\n\nThis activity is a placeholder for a live lecture activity",
   "Office Hours": OFFICE_HOURS_DUMMY
+}
+
+export const EMPTY_ACTIVITY: Activity = {
+  activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
+  duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
+  vsCodeExtensions: '', artifactAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
