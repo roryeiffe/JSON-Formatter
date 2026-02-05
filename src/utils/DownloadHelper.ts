@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { updateActivityDescriptionAndInstructions } from "./ActivityFieldGeneration";
 import { sanitizeFilename } from "./Sanitization";
-import { ExternalActivity, FormatBools, Unit, ZipFolders } from "../types";
+import { Activity, ExternalActivity, FormatBools, FormatFiles, NavigationJson, Unit, ZipFolders } from "../types";
 import { returnVersionComment } from "./VersionTracker";
 import saveAs from "file-saver";
 
@@ -37,7 +37,7 @@ function formatIndex(n: number): string {
  * @param unitTitle
  * @returns 
  */
-function writeActivityStubFile(folder: JSZip | null | undefined, activity: any, unitTitle: string) {
+function writeActivityStubFile(folder: JSZip | null | undefined, activity: Activity, unitTitle: string) {
   if (!folder) return;
 
   updateActivityDescriptionAndInstructions(activity, unitTitle);
@@ -64,7 +64,7 @@ function writeActivityStubFile(folder: JSZip | null | undefined, activity: any, 
  * @param formatsToDownload booleans representing which formats are valid
  */
 function applyNavigationTemplates(
-  navigation_json: any,
+  navigation_json: NavigationJson,
   unitTitle: string,
   formatsToDownload: FormatBools
 ) {
@@ -192,8 +192,8 @@ export function writeUnitStructureFiles(
 export function writeRootArtifacts(
   rootFolder: JSZip,
   unitTitle: string,
-  navigation_json: any,
-  format_files: any,
+  navigation_json: NavigationJson,
+  format_files: FormatFiles,
   formatsToDownload: FormatBools
 ) {
   const base = sanitizeFilename(unitTitle);

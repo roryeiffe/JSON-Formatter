@@ -1,4 +1,4 @@
-import { Activity } from "./types"
+import { Activity, NavigationJson, NavigationJSONHelper } from "../types"
 
 const OFFICE_HOURS_DUMMY = `
 # Office Hours
@@ -25,7 +25,7 @@ During office hours, you have the chance to ask your instructor for guidance. He
 
 
 
-export const dummyActivities: {[key: string]: any} = {
+export const dummyActivities: {[key: string]: string} = {
   "Lesson - Learning Content": "## This is a Dummy Learning Content Activity\n\nThis activity is a placeholder for a learning content activity",
   "Assignment": "## This is a Dummy Assignment Activity\n\nThis activity is a placeholder for an assignment activity",
   "Reference": "## This is a Dummy Reference Activity\n\nThis activity is a placeholder for a reference activity",
@@ -41,3 +41,11 @@ export const EMPTY_ACTIVITY: Activity = {
 }
 
 export const EXCEL_FILE_ENDINGS = ["Unit Breakdown", "Structure", "Unit"];
+
+export const EMPTY_NAVIGATION_JSON: NavigationJSONHelper = {
+  templates: [],
+  duration: 0,
+  tags: [],
+  exitcriteria: [],
+  skill: ''
+}

@@ -1,4 +1,4 @@
-import { formatKey, Unit } from "../types";
+import { Activity, ActivityIds, FormatFiles, formatKey, Unit } from "../types";
 import { IDsGeneratorRandom } from "./IDsGenerator";
 /**
  * These helper methods are used to manage the different formats for a given unit including.
@@ -14,9 +14,9 @@ import { IDsGeneratorRandom } from "./IDsGenerator";
  * @param unit the unit to "clean up"
  * @returns the "cleaned up" unit
  */
-const removeFormatTags = (unit: any) => {
+const removeFormatTags = (unit: Unit) => {
   // quick helper method:
-  const filterActivitiesArray = (activity: any) => {
+  const filterActivitiesArray = (activity: Activity) => {
     const activityClone = structuredClone(activity);
     delete activityClone['isILT'];
     delete activityClone['isIST'];
@@ -42,7 +42,7 @@ const removeFormatTags = (unit: any) => {
  * @param activityIds existing activity Ids
  * @returns the format files to be downloaded
  */
-const prepFormatFiles = (unit: Unit, activityIds: any) => {
+const prepFormatFiles = (unit: Unit, activityIds: ActivityIds):FormatFiles => {
   let data1 = prepFormatFile('isILT', unit, activityIds);
   let data2 = prepFormatFile('isIST', unit, activityIds);
   let data3 = prepFormatFile('isPLT', unit, activityIds);
@@ -66,12 +66,12 @@ const prepFormatFiles = (unit: Unit, activityIds: any) => {
  * @param activityIds 
  * @returns 
  */
-const prepFormatFile = (key: formatKey, unitTaxonomy: Unit, activityIds: any) => {
+const prepFormatFile = (key: formatKey, unitTaxonomy: Unit, activityIds: ActivityIds) => {
   if (!unitTaxonomy) return;
   // only grab activities for the designated format:
   let data: any = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(unitTaxonomy, null, 2))), key, activityIds);
-  let dataFiltered = data.data;
-  let unfoundActivities = data.unfound;
+  let dataFiltered:Unit = data.data;
+  let unfoundActivities:string[] = data.unfound;
 
   // Remove unwanted fields (isPLT, isILT, etc.)
   dataFiltered = removeFormatTags(dataFiltered);
@@ -94,12 +94,12 @@ const prepFormatFile = (key: formatKey, unitTaxonomy: Unit, activityIds: any) =>
  * @param activityIds existing activity Ids
  * @returns 
  */
-const filterActivitiesByFormat = (unit: Unit, key: formatKey, activityIds: any) => {
-  let unfound:any = [];
+const filterActivitiesByFormat = (unit: Unit, key: formatKey, activityIds: ActivityIds) => {
+  let unfound:string[] = [];
   const format = key.slice(-3).toUpperCase();
   // Unit Level
-  unit.unitActivities = unit.unitActivities?.filter((activity: any) => activity[key])
-  unit.unitActivities = unit.unitActivities?.map((activity: any) => {
+  unit.unitActivities = unit.unitActivities?.filter((activity: Activity) => activity[key])
+  unit.unitActivities = unit.unitActivities?.map((activity: Activity) => {
     let newId = activityIds[activity.activityName + format];
     if(!newId) {
         unfound.push(activity.activityName + format);
@@ -111,8 +111,8 @@ const filterActivitiesByFormat = (unit: Unit, key: formatKey, activityIds: any) 
 
   // Module Level
   for (let i = 0; i < unit.modules.length; i++) {
-    unit.modules[i].moduleActivities = unit.modules[i].moduleActivities?.filter((activity: any) => activity[key]);
-    unit.modules[i].moduleActivities = unit.modules[i].moduleActivities?.map((activity: any) => {
+    unit.modules[i].moduleActivities = unit.modules[i].moduleActivities?.filter((activity: Activity) => activity[key]);
+    unit.modules[i].moduleActivities = unit.modules[i].moduleActivities?.map((activity: Activity) => {
       activity.activityId = activityIds[activity.activityName + format] || IDsGeneratorRandom();
       return activity;
     });
@@ -121,8 +121,8 @@ const filterActivitiesByFormat = (unit: Unit, key: formatKey, activityIds: any) 
   // Topic Level
   for (let i = 0; i < unit.modules.length; i++) {
     for (let j = 0; j < unit.modules[i].topics.length; j++) {
-      unit.modules[i].topics[j].topicActivities = unit.modules[i].topics[j].topicActivities?.filter((activity: any) => activity[key])
-      unit.modules[i].topics[j].topicActivities = unit.modules[i].topics[j].topicActivities?.map((activity: any) => {
+      unit.modules[i].topics[j].topicActivities = unit.modules[i].topics[j].topicActivities?.filter((activity: Activity) => activity[key])
+      unit.modules[i].topics[j].topicActivities = unit.modules[i].topics[j].topicActivities?.map((activity: Activity) => {
         activity.activityId = activityIds[activity.activityName + format] || IDsGeneratorRandom();
         return activity;
       });

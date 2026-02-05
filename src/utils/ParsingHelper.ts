@@ -3,8 +3,8 @@ import { PRODUCTION_URL } from "../urls";
 import { Activity, FindContextResult, ModuleRef, ParseContext, TaxonomyRow, TopicRef } from "../types";
 import { getId } from "./IDsGenerator";
 import { getUnitNameVariants, isValidTitle, sanitizeFilename } from "./Sanitization";
-import { getActivityCode } from "./ActivityTypesUtil";
-import { dummyActivities, EMPTY_ACTIVITY } from "../constants";
+import { getActivityCode } from "./ActivityTypesFormatsUtil";
+import { dummyActivities, EMPTY_ACTIVITY } from "./Constants";
 
 /**
  * This file contains helper methods that break up the processing of the excel data
@@ -140,7 +140,7 @@ export async function buildBaseActivity(ctx: ParseContext, row: TaxonomyRow): Pr
  */
 export async function resolveActivityContent(
   ctx: ParseContext,
-  activity: any,
+  activity: Activity,
   row: TaxonomyRow,
   unitTitle: string,
   moduleTitle?: string,
@@ -289,7 +289,7 @@ export function postProcessActivity(activity: Activity) {
  */
 export function assignActivityByScope(
   ctx: ParseContext,
-  activity: any,
+  activity: Activity,
   scopeRaw: string | undefined,
   currentModule: ModuleRef | null,
   currentTopic: TopicRef | null

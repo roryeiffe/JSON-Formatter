@@ -1,3 +1,6 @@
+import { EMPTY_NAVIGATION_JSON } from "./Constants";
+import { ExitCriteriaRow, MetadataRow, NavigationJson, Unit } from "../types";
+
 /**
  * Given information from the excel, construct the navigation.json
  * @param taxonomy_json 
@@ -5,15 +8,14 @@
  * @param metadata_json 
  * @returns 
  */
-export const generate_navigation_json = async (taxonomy_json: any, exit_criteria_json: any[], metadata_json: any[]) => {
+export const generate_navigation_json = async (taxonomy_json: Unit, exit_criteria_json: ExitCriteriaRow[], metadata_json: MetadataRow[]) => {
   // Initialize:
-  let navigation_json: any = structuredClone(taxonomy_json);
-  navigation_json = {
-    ...navigation_json,
-    exitcriteria: [],
-    tags: [],
+  let navigation_json: NavigationJson =
+  {
+    ...structuredClone(taxonomy_json),
+    ...EMPTY_NAVIGATION_JSON,
     skill: taxonomy_json.title
-  }
+  };
 
   navigation_json.duration = getTotalDuration(navigation_json);
 
@@ -50,17 +52,17 @@ export const generate_navigation_json = async (taxonomy_json: any, exit_criteria
  * @param navigation_json 
  * @returns duration, in minutes of all activities
  */
-const getTotalDuration = (navigation_json: any): number => {
+const getTotalDuration = (navigation_json: Unit): number => {
   let totalDuration = 0;
-  for (const activity of navigation_json.unitActivities) {
+  for (const activity of navigation_json.unitActivities!) {
     totalDuration += activity.duration || 0;
   }
   for (const module of navigation_json.modules) {
-    for (const activity of module.moduleActivities) {
+    for (const activity of module.moduleActivities!) {
       totalDuration += activity.duration || 0;
     }
     for (const topic of module.topics) {
-      for (const activity of topic.topicActivities) {
+      for (const activity of topic.topicActivities!) {
         totalDuration += activity.duration || 0;
       }
     }

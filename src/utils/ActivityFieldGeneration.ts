@@ -4,6 +4,8 @@
  * these are fairly generic. 
  */
 
+import { Activity } from "../types";
+
 const activityTypeToDescriptionMap: Record<string, string> = {
   "Lesson - Video": "This video covers concepts related to <UNIT-NAME>",
   "Lesson - Learning Content": "This written lesson covers concepts related to <UNIT-NAME>",
@@ -49,7 +51,7 @@ const activityTypeToInstructionMap: Record<string, string> = {
  * @param activity 
  * @param unitName 
  */
-export const updateActivityDescriptionAndInstructions = (activity: any, unitName: string) => {
+export const updateActivityDescriptionAndInstructions = (activity: Activity, unitName: string) => {
   // Set description and instructions based on activity type
   let description: string | undefined;
   if( activity.isReview ) description = activityTypeToDescriptionMapReview[activity.activityType]

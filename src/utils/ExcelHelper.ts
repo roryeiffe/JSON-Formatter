@@ -1,7 +1,7 @@
 
 import * as XLSX from "xlsx";
-import { ParsedExcelPayload, ParsedRow, TaxonomyRow } from "../types";
-import { EXCEL_FILE_ENDINGS } from "../constants";
+import { ExitCriteriaRow, MetadataRow, ParsedExcelPayload, ParsedRow, TaxonomyRow } from "../types";
+import { EXCEL_FILE_ENDINGS } from "./Constants";
 
 /**
  * These helper functions involve the process of converting the Excel data to 
@@ -70,8 +70,8 @@ export async function parseUploadedExcel(file: File): Promise<ParsedExcelPayload
   if (!metadataSheet) throw new Error(`Missing sheet: "Metadata"`);
 
   const taxonomyRows:TaxonomyRow[] = XLSX.utils.sheet_to_json<TaxonomyRow>(taxonomySheet);
-  const exitCriteriaRows = XLSX.utils.sheet_to_json<ParsedRow>(exitCriteriaSheet);
-  const metadataRows = XLSX.utils.sheet_to_json<ParsedRow>(metadataSheet, { range: 1 });
+  const exitCriteriaRows:ExitCriteriaRow[] = XLSX.utils.sheet_to_json<ExitCriteriaRow>(exitCriteriaSheet);
+  const metadataRows:MetadataRow[] = XLSX.utils.sheet_to_json<MetadataRow>(metadataSheet, { range: 1 });
 
   return {
     fileName: file.name,

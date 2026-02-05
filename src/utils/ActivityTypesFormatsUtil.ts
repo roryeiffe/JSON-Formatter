@@ -4,6 +4,8 @@
  * - determining which format the activity appears in based on the type
  */
 
+import { Activity } from "../types";
+
 
 // Mapping of activity names as they appear in the excel to activity codes
 const activityToCodeMap: Record<string, string> = {
@@ -46,7 +48,7 @@ export const getActivityCode = (activityType: string): string => {
  * object based on the type
  * @param activity 
  */
-export const setFormatBooleans = (activity: any) => {
+export const setFormatBooleans = (activity: Activity) => {
   // All activities are included in ILT:
   activity.isILT = true
 

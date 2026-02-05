@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { IDsGeneratorRandom } from '../utils/IDsGenerator';
-import { ParsedRow, Unit, FormatBools, ParseContext, ExternalActivity, TaxonomyRow } from '../types';
+import { ParsedRow, Unit, FormatBools, ParseContext, ExternalActivity, TaxonomyRow, FormatFiles, ActivityIds, NavigationJson } from '../types';
 import JSZip from 'jszip';
-import { setFormatBooleans } from '../utils/ActivityTypesUtil';
+import { setFormatBooleans } from '../utils/ActivityTypesFormatsUtil';
 import { updateActivityDescriptionAndInstructions } from '../utils/ActivityFieldGeneration';
 import { prepFormatFiles } from '../utils/FormatFileUtil';
 import { parseUploadedExcel } from '../utils/ExcelHelper';
@@ -11,11 +11,15 @@ import { generate_navigation_json } from '../utils/NavigationHelper';
 import { createZipFolders, finalizeAndDownloadZip, writeExternalActivities, writeRootArtifacts, writeUnitStructureFiles } from '../utils/DownloadHelper';
 
 const ExcelUploader: React.FC = () => {
-  const [data, setData] = useState<ParsedRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   /**
-   * This is triggered when we upload our excel file
+   * This is triggered when we upload our excel file. Afterwards, the following workflow takes place:
+   * 1. Parse the excel into raw json rows (uses helper functions from ExcelHelper.ts)
+   * 2. Process the raw json into a structured unit representation (uses helper functions from ParsingHelper.ts)
+   * 3. Generate navigation.json (uses helper functions from NavigationHelper.ts)
+   * 4. Update activity fields and prepare format files (uses helper functions from FormatFileUtil.ts)
+   * 5. Generate zip structure and download (uses helper functions from DownloadHelper.ts)
    * @param event 
    * @returns 
    */
@@ -126,12 +130,12 @@ const ExcelUploader: React.FC = () => {
    * @param activityIds 
    * @returns 
    */
-  const updateActivityFields = async (parsedTaxonomy: any, activityIds: any) => {
+  const updateActivityFields = async (parsedTaxonomy: Unit, activityIds: ActivityIds) => {
     let taxonomyClone = structuredClone(parsedTaxonomy);
 
     // unit:
     delete taxonomyClone.description;
-    for (const activity of taxonomyClone.unitActivities) {
+    for (const activity of taxonomyClone.unitActivities!) {
       setFormatBooleans(activity);
       updateActivityDescriptionAndInstructions(activity, taxonomyClone.title);
     }
@@ -139,7 +143,7 @@ const ExcelUploader: React.FC = () => {
     let moduleCount = 1;
     for (const module of taxonomyClone.modules) {
       delete module.description;
-      for (const activity of module.moduleActivities) {
+      for (const activity of module.moduleActivities!) {
         setFormatBooleans(activity);
         updateActivityDescriptionAndInstructions(activity, taxonomyClone.title);
       }
@@ -147,7 +151,7 @@ const ExcelUploader: React.FC = () => {
       let topicCount = 1;
       for (const topic of module.topics) {
         delete topic.description;
-        for (const activity of topic.topicActivities) {
+        for (const activity of topic.topicActivities!) {
           setFormatBooleans(activity);
           updateActivityDescriptionAndInstructions(activity, taxonomyClone.title);
         }
@@ -171,8 +175,8 @@ const ExcelUploader: React.FC = () => {
   const generateZipStructure = async (
     unit: Unit,
     unitName: string,
-    format_files: any,
-    navigation_json: any,
+    format_files: FormatFiles,
+    navigation_json: NavigationJson,
     externalActivities: ExternalActivity[],
     formatsToDownload: FormatBools
   ) => {
@@ -195,13 +199,6 @@ const ExcelUploader: React.FC = () => {
       <h2 className="text-xl font-bold mb-4">Upload Excel File</h2>
       <input className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold rounded-lg shadow-lg transform text-center transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8"
         type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
-
-      {data.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold mb-2">Parsed Data Preview:</h3>
-          <pre className="bg-gray-100 p-2 rounded overflow-x-auto max-h-64">{JSON.stringify(data, null, 2)}</pre>
-        </div>
-      )}
       {loading && <img src='./loading.gif' width='50px' />}
     </div>
   );

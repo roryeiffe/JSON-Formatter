@@ -47,12 +47,36 @@ bun run dev
 
 ### Components
 
-**_Responsible for Navigation.json input:_**
+## General Utils
+| Component | Purpose |
+| --------- | --------|
+| [ActivityFieldGeneration.ts](./src/utils/ActivityFieldGeneration.ts) | Used to generate additional fields on activities that are not explicitly defined in the excel |
+| [ActivityTypesFormatsUtil.ts](./src/utils/ActivityTypesFormatsUtil.ts) | Contains helper functions relating to activities and their types/formats |
+| [FormatFileUtil.ts](./src/utils/FormatFileUtil.ts) | helper methods are used to manage the different formats for a given unit |
+| [IdsGenerator.ts](./src/utils/IdsGenerator.ts) | Contains methods to generate GUIDs for activities, topics, modules, and units |
+| [Sanitization.ts](./src/utils/Sanitization.ts) | Contains methods to sanitize strings for use in file paths, urls, json fields, etc. |
+| [Constants.ts](./src/utils/Constants.ts) | Contains constant values used throughout the application (empty activity, empty navigation json, etc.) |
+| [VersionTracker.ts](./src/utils/VersionTracker.ts) | Contains methods to track the version history of the JSON Formatter |
 
-- Taxonomy
-- Modules
-- Topic
+## Pages
+| Component | Purpose |
+| --------- | --------|
+| [ExcelUploader.tsx](./src/components/ExcelUploader.tsx) | Main page for uploading excel files and generating the JSON files |
+| [ActivityMappingUtil.tsx](./src/components/ActivityMappingUtil.tsx) | Page for mapping activities to topics and modules based on a predefined excel template |
 
+## Excel -> JSON Workflow
+Because the process of converting excel files to JSON files involves multiple steps and components, the following is a breakdown of the workflow and the relevant helper files at each step:
+| Step | Description | Relevant Files |
+| ---- | ----------- | -------------- |
+| 1 | Parse the excel into raw json rows | [ExcelHelper.ts](./src/utils/ExcelHelper.ts) |
+| 2 | Process the raw json rows into structured units, modules, topics, and activities | [ParsingHelper.ts](./src/utils/ParsingHelper.ts) |
+| 3 | Generate navigation.json based on the structured data | [NavigationHelper.ts](./src/utils/NavigationHelper.ts) |
+| 4 | Update activity fields and prepare format files | [FormatFileUtil.ts](./src/utils/FormatFileUtil.ts) |
+| 5 | Generate the ZIP structure and download | [DownloadHelper.ts](./src/utils/DownloadHelper.ts) |
+
+
+
+### Version History
 
 | Version    | Date | Description |
 | -------- | ------- | ----------- |
@@ -68,3 +92,4 @@ bun run dev
 | V1.9  | 10/31/2025 | Added logic to check if there are any existing ids for the activities and if so, uses them instead of generating new ids. |
 | V1.10 | 12/15/2025 | Added logic to generate dummy files if activity links are missing from excel file. |
 | V1.11 | 12/16/2025 | Modified logic for dummy reference and dummy videos. Also added conditional downloading of different format files (ILT will always be downloaded, IST if there is at least one activity URL, and PLT if all activity URLs are filled out.)
+| V2.0 | 02/05/2026 | Refactored code into modular utility files for better maintainability. Updated types and removed uses of 'any' type. Removed unused code, code, comments, and imports. |
