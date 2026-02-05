@@ -1,3 +1,11 @@
+/**
+ * This util file contains helper functions relating to activities and their types including
+ * - mapping activity types to activity codes
+ * - determining which format the activity appears in based on the type
+ */
+
+
+// Mapping of activity names as they appear in the excel to activity codes
 const activityToCodeMap: Record<string, string> = {
   "Exam": "ACT003",
   "Lesson - Video": "ACT0061",
@@ -12,6 +20,18 @@ const activityToCodeMap: Record<string, string> = {
   "Assignment": "ACT009"
 }
 
+// List of activity types included in IST and PLT types
+// Also include separate types for review
+const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours", "Lesson - Video"];
+const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Video", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge"]
+const PLTActivityTypes = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours","Reference", "Lesson - Video"]
+const PLTReviewTypes   = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Reference", "Lesson - Video"]
+
+/**
+ * Returns the corresponding code based on the activity type
+ * @param activityType 
+ * @returns 
+ */
 export const getActivityCode = (activityType: string): string => {
   const code = activityToCodeMap[activityType]
   if (!code) {
@@ -21,11 +41,11 @@ export const getActivityCode = (activityType: string): string => {
   return code
 }
 
-const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours", "Lesson - Video"];
-const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Video", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge"]
-const PLTActivityTypes = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours","Reference", "Lesson - Video"]
-const PLTReviewTypes   = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Reference", "Lesson - Video"]
-
+/**
+ * Given an activity, set the is*** fields on the activity
+ * object based on the type
+ * @param activity 
+ */
 export const setFormatBooleans = (activity: any) => {
   // All activities are included in ILT:
   activity.isILT = true

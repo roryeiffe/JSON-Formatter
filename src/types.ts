@@ -188,6 +188,9 @@ type URLAttachment = {
   url: string,
 }
 
+
+export type formatKey = "isILT" | "isIST" | "isPLT";
+
 export type BuildArtifactsResult = {
   parsedTaxonomy: any;            // replace with your Unit type
   externalActivities: any[];      // replace with type

@@ -1,4 +1,9 @@
-// make map of activity types to generic description and instructions:
+/**
+ * This file contains helper functions to generate additional fields on activities that
+ * are not explicitly defined in the excel (ex: description/instructions). As such, some of 
+ * these are fairly generic. 
+ */
+
 const activityTypeToDescriptionMap: Record<string, string> = {
   "Lesson - Video": "This video covers concepts related to <UNIT-NAME>",
   "Lesson - Learning Content": "This written lesson covers concepts related to <UNIT-NAME>",
@@ -12,7 +17,6 @@ const activityTypeToDescriptionMap: Record<string, string> = {
   "Assignment": "This activity will give you a chance to get hands-on practice"
 }
 
-// make map of activity types to generic description and instructions:
 const activityTypeToDescriptionMapReview: Record<string, string> = {
   "Lesson - Video": "This video covers previously covered concepts related to <UNIT-NAME>",
   "Lesson - Learning Content": "This written lesson covers previously covered concepts related to <UNIT-NAME>",
@@ -39,6 +43,12 @@ const activityTypeToInstructionMap: Record<string, string> = {
   "Assignment": "Complete the assignment. Use the provided instructions and examples to guide you."
 }
 
+/**
+ * Given an activity and a unit name, fill out the description and instruction fields for
+ * the activity based on the mappings defined in this file
+ * @param activity 
+ * @param unitName 
+ */
 export const updateActivityDescriptionAndInstructions = (activity: any, unitName: string) => {
   // Set description and instructions based on activity type
   let description: string | undefined;

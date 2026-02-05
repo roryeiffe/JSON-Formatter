@@ -39,3 +39,5 @@ export const EMPTY_ACTIVITY: Activity = {
   duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
   vsCodeExtensions: '', artifactAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
+
+export const EXCEL_FILE_ENDINGS = ["Unit Breakdown", "Structure", "Unit"];

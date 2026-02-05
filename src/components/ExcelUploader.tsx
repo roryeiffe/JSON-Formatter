@@ -1,20 +1,17 @@
 import React, { act, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { IDsGenerator, IDsGeneratorRandom } from '../utils/IDsGenerator';
-import { Activity, ParsedRow, UnitActivity, TaxonomyRow, Unit, ExternalActivity, FormatBools, ParseContext } from '../types';
-import { PRODUCTION_URL } from '../urls';
+import { IDsGeneratorRandom } from '../utils/IDsGenerator';
+import { Activity, ParsedRow, UnitActivity, TaxonomyRow, Unit,  FormatBools, ParseContext } from '../types';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
-import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
+import { updateActivityDescriptionAndInstructions } from '../utils/ActivityFieldGeneration';
 import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
 import { returnVersionComment } from '../utils/VersionTracker';
-import axios from 'axios';
-import { dummyActivities } from '../constants';
 import { parseUploadedExcel } from '../utils/ExcelHelper';
 import { sanitizeFilename } from '../utils/Sanitization';
-import { EMPTY_ACTIVITY } from '../constants';
 import { assignActivityByScope, buildBaseActivity, fetchExistingActivityIds, getOrCreateModuleTopic, postProcessActivity, resolveActivityContent } from '../utils/ParsingHelper';
+import { generate_navigation_json } from '../utils/NavigationHelper';
 
 
 
@@ -23,6 +20,11 @@ const ExcelUploader: React.FC = () => {
   const [data, setData] = useState<ParsedRow[]>([]);
   const [loading, setLoading] = useState(false);
 
+  /**
+   * This is triggered when we upload our excel file
+   * @param event 
+   * @returns 
+   */
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
   try {
     setLoading(true);
@@ -48,8 +50,7 @@ const ExcelUploader: React.FC = () => {
     const navigation_json = await generate_navigation_json(
       parsedTaxonomy,
       payload.exitCriteriaRows,
-      payload.metadataRows,
-      payload.fileName
+      payload.metadataRows
     );
 
     const format_files = await addActivityFields(
@@ -150,7 +151,7 @@ const parseRawJSON = async (raw_taxonomy_json: TaxonomyRow[], fileName: string) 
 
 
 
-  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any, externalActivities: any, formatsToDownload: any) => {
+  const generateZipStructure = async (unit: Unit, unitName: string, format_files: any, navigation_json: any, externalActivities: any, formatsToDownload: any) => {
 
     const zip = new JSZip();
     const rootFolder = zip.folder(unitName || 'unit');
@@ -255,60 +256,7 @@ const parseRawJSON = async (raw_taxonomy_json: TaxonomyRow[], fileName: string) 
     saveAs(content, `${unitName || 'unit'}-generated-files.zip`);
   };
 
-  const generate_navigation_json = async (parsedExcel: any, exit_criteria_json: any[], metadata_json: any[], fileName: string) => {
-    let navigation_json: any = structuredClone(parsedExcel);
-    navigation_json = {
-      ...navigation_json,
-      exitcriteria: [],
-      tags: [],
-      skill: parsedExcel.title
-    }
-
-    // sum up the duration of all activities in the unit:
-    let totalDuration = 0;
-    for (const activity of navigation_json.unitActivities) {
-      totalDuration += activity.duration || 0;
-    }
-    for (const module of navigation_json.modules) {
-      for (const activity of module.moduleActivities) {
-        totalDuration += activity.duration || 0;
-      }
-      for (const topic of module.topics) {
-        for (const activity of topic.topicActivities) {
-          totalDuration += activity.duration || 0;
-        }
-      }
-    }
-
-    navigation_json.duration = totalDuration;
-
-    // Exit Criteria:
-    for (const row of exit_criteria_json) {
-      const exitCriteriaTitle = row["Exit Criteria"]?.trim();
-      const assessmentApproach = row["Assessment Approach"]?.trim();
-      navigation_json.exitcriteria.push({
-        title: exitCriteriaTitle,
-        assessmentApproach,
-      });
-    }
-
-    // Metadata:
-    for (const row of metadata_json) {
-      navigation_json.tags.push(row["Tag Value"]?.trim());
-
-    }
-
-    // Navigation JSON:
-    delete navigation_json.unitActivities; // Remove activities from navigation_json to avoid duplication
-    for (const module of navigation_json.modules) {
-      delete module.moduleActivities; // Remove activities from each module
-      for (const topic of module.topics) {
-        delete topic.topicActivities; // Remove activities from each topic
-      }
-    }
-
-    return navigation_json;
-  };
+  
 
 
   const addActivityFields = async (parsedTaxonomy: any, activityIds: any) => {
