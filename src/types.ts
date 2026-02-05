@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import React, {MouseEventHandler} from 'react';
 
 // Props:
@@ -230,6 +231,14 @@ export type TopicRef = ModuleRef["topics"][number];
 export type FindContextResult = {
   currentModule: ModuleRef | null;
   currentTopic: TopicRef | null;
+};
+
+
+
+export type ZipFolders = {
+  rootFolder: JSZip;
+  moduleContainerFolder: JSZip;
+  externalActivitiesFolder: JSZip;
 };
 
 

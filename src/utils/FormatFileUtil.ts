@@ -42,10 +42,10 @@ const removeFormatTags = (unit: any) => {
  * @param activityIds existing activity Ids
  * @returns the format files to be downloaded
  */
-const downloadTaxonomyAllFormats = (unit: Unit, activityIds: any) => {
-  let data1 = downloadTaxonomyOneFormat('isILT', unit, activityIds);
-  let data2 = downloadTaxonomyOneFormat('isIST', unit, activityIds);
-  let data3 = downloadTaxonomyOneFormat('isPLT', unit, activityIds);
+const prepFormatFiles = (unit: Unit, activityIds: any) => {
+  let data1 = prepFormatFile('isILT', unit, activityIds);
+  let data2 = prepFormatFile('isIST', unit, activityIds);
+  let data3 = prepFormatFile('isPLT', unit, activityIds);
 
   let unfoundActivities = [...data1!.unfoundActivities, ...data2!.unfoundActivities, ...data3!.unfoundActivities];
   if (unfoundActivities.length > 0) {
@@ -66,7 +66,7 @@ const downloadTaxonomyAllFormats = (unit: Unit, activityIds: any) => {
  * @param activityIds 
  * @returns 
  */
-const downloadTaxonomyOneFormat = (key: formatKey, unitTaxonomy: Unit, activityIds: any) => {
+const prepFormatFile = (key: formatKey, unitTaxonomy: Unit, activityIds: any) => {
   if (!unitTaxonomy) return;
   // only grab activities for the designated format:
   let data: any = filterActivitiesByFormat(structuredClone(JSON.parse(JSON.stringify(unitTaxonomy, null, 2))), key, activityIds);
@@ -132,4 +132,4 @@ const filterActivitiesByFormat = (unit: Unit, key: formatKey, activityIds: any) 
 };
 
 
-export { removeFormatTags, downloadTaxonomyAllFormats, downloadTaxonomyOneFormat, filterActivitiesByFormat };
+export { removeFormatTags, prepFormatFiles, prepFormatFile, filterActivitiesByFormat };
