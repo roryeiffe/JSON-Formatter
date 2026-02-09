@@ -77,7 +77,7 @@ const prepFormatFile = (key: formatKey, unitTaxonomy: Unit, activityIds: Activit
   dataFiltered = removeFormatTags(dataFiltered);
 
   // Finalize some meta-data:
-  let formatToCode = {'isILT': 'IN03', 'isIST': 'INO2', 'isPLT': 'IN01'}
+  let formatToCode = {'isILT': 'IN03', 'isIST': 'IN02', 'isPLT': 'IN01'}
   dataFiltered.code = formatToCode[key];
   dataFiltered.version = "v1.0";
   dataFiltered.name = dataFiltered.title;
