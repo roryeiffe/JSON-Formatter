@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { IDsGeneratorRandom } from '../utils/IDsGenerator';
+import { IDsGenerator, IDsGeneratorRandom } from '../utils/IDsGenerator';
 import { ParsedRow, Unit, FormatBools, ParseContext, ExternalActivity, TaxonomyRow, FormatFiles, ActivityIds, NavigationJson } from '../types';
 import JSZip from 'jszip';
 import { setFormatBooleans } from '../utils/ActivityTypesFormatsUtil';
 import { updateActivityDescriptionAndInstructions } from '../utils/ActivityFieldGeneration';
 import { prepFormatFiles } from '../utils/FormatFileUtil';
 import { parseUploadedExcel } from '../utils/ExcelHelper';
-import { assignActivityByScope, buildBaseActivity, fetchExistingActivityIds, getOrCreateModuleTopic, postProcessActivity, resolveActivityContent } from '../utils/ParsingHelper';
+import { assignActivityByScope, buildBaseActivity, fetchExistingActivityIds, fetchUnitId, getOrCreateModuleTopic, postProcessActivity, resolveActivityContent } from '../utils/ParsingHelper';
 import { generate_navigation_json } from '../utils/NavigationHelper';
 import { createZipFolders, finalizeAndDownloadZip, writeExternalActivities, writeRootArtifacts, writeUnitStructureFiles } from '../utils/DownloadHelper';
 
@@ -66,7 +66,7 @@ const ExcelUploader: React.FC = () => {
     const unit: Unit = {
       modules: [],
       unitActivities: [],
-      id: IDsGeneratorRandom(),
+      id: await fetchUnitId(fileName) || await IDsGenerator(fileName),
       title: fileName,
       description: "",
     };

@@ -34,6 +34,17 @@ export async function fetchExistingActivityIds(unitName: string): Promise<Record
   }
 }
 
+export async function fetchUnitId(unitName: string): Promise<string> {
+  try {
+    const res = await axios.post(`${PRODUCTION_URL}/fetch-unit-id`, { unitName });
+    return res.data.unitId;
+  } catch (error) {
+    alert("Failed to fetch existing unit ID.");
+    console.error("Failed to fetch existing unit ID:", error);
+    return ''; // fallback
+  }
+}
+
 /**
  * Given the context (see above) and the raw values for topic/module name
  * Check which of the titles are valid and create the module/topic object
