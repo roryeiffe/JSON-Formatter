@@ -40,7 +40,7 @@ export const EMPTY_ACTIVITY: Activity = {
   vsCodeExtensions: '', artifactAttachments: [], isILT: true, isIST: true, isPLT: true,
 }
 
-export const EXCEL_FILE_ENDINGS = ["Unit Breakdown", "Structure", "Unit"];
+export const EXCEL_FILE_ENDINGS = ["Unit Breakdown", "Structure", "Unit", "Unit Structure"];
 
 export const EMPTY_NAVIGATION_JSON: NavigationJSONHelper = {
   templates: [],

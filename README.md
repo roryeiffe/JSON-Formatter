@@ -1,9 +1,5 @@
 # JSON Formatter
 
-A tool for formatting and managing JSON data with an emphasis on handling **Navigation.json** inputs.
-
----
-
 ## Installation
 
 Follow these steps to get started with the project:
@@ -13,7 +9,7 @@ Follow these steps to get started with the project:
 Clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/uladaharanina/JSON-Formatter.git
+git clone https://github.com/roryeiffe/JSON-Formatter.git
 ```
 
 2. Install Dependencies
@@ -45,26 +41,25 @@ With `bun`
 bun run dev
 ```
 
-### Components
+## Components
 
-## General Utils
+### General Utils
 | Component | Purpose |
 | --------- | --------|
 | [ActivityFieldGeneration.ts](./src/utils/ActivityFieldGeneration.ts) | Used to generate additional fields on activities that are not explicitly defined in the excel |
 | [ActivityTypesFormatsUtil.ts](./src/utils/ActivityTypesFormatsUtil.ts) | Contains helper functions relating to activities and their types/formats |
-| [FormatFileUtil.ts](./src/utils/FormatFileUtil.ts) | helper methods are used to manage the different formats for a given unit |
-| [IdsGenerator.ts](./src/utils/IdsGenerator.ts) | Contains methods to generate GUIDs for activities, topics, modules, and units |
+| [IDsGenerator.ts](./src/utils/IDsGenerator.ts) | Contains methods to generate GUIDs for activities, topics, modules, and units |
 | [Sanitization.ts](./src/utils/Sanitization.ts) | Contains methods to sanitize strings for use in file paths, urls, json fields, etc. |
 | [Constants.ts](./src/utils/Constants.ts) | Contains constant values used throughout the application (empty activity, empty navigation json, etc.) |
 | [VersionTracker.ts](./src/utils/VersionTracker.ts) | Contains methods to track the version history of the JSON Formatter |
 
-## Pages
+### Pages
 | Component | Purpose |
 | --------- | --------|
 | [ExcelUploader.tsx](./src/components/ExcelUploader.tsx) | Main page for uploading excel files and generating the JSON files |
 | [ActivityMappingUtil.tsx](./src/components/ActivityMappingUtil.tsx) | Page for mapping activities to topics and modules based on a predefined excel template |
 
-## Excel -> JSON Workflow
+### Excel -> JSON Workflow
 Because the process of converting excel files to JSON files involves multiple steps and components, the following is a breakdown of the workflow and the relevant helper files at each step:
 | Step | Description | Relevant Files |
 | ---- | ----------- | -------------- |
@@ -76,7 +71,7 @@ Because the process of converting excel files to JSON files involves multiple st
 
 
 
-### Version History
+## Version History
 
 | Version    | Date | Description |
 | -------- | ------- | ----------- |
@@ -93,3 +88,15 @@ Because the process of converting excel files to JSON files involves multiple st
 | V1.10 | 12/15/2025 | Added logic to generate dummy files if activity links are missing from excel file. |
 | V1.11 | 12/16/2025 | Modified logic for dummy reference and dummy videos. Also added conditional downloading of different format files (ILT will always be downloaded, IST if there is at least one activity URL, and PLT if all activity URLs are filled out.)
 | V2.0 | 02/05/2026 | Refactored code into modular utility files for better maintainability. Updated types and removed uses of 'any' type. Removed unused code, code, comments, and imports. |
+
+## Deploying Changes
+- Make changes to code
+- Create PR
+- Have PR reviewed by team member
+- Merge PR
+- Navigate to [render dashboard](https://dashboard.render.com/)
+- Go to JSON Formatter Project
+- Click on the corresponding sub-project
+  - JSON-Formatter - front-end
+  - JSON-Formatter-Azure-Fetch - back-end
+- From here, can select Manual Deploy and deploy the latest commit or a specific commit
