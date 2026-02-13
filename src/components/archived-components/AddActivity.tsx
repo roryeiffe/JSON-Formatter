@@ -1,8 +1,8 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent, act } from "react";
-import { Activity, AddActivityProps, ArtifactAttachment } from "../types";
+import { Activity, AddActivityProps, ArtifactAttachment } from "../../types";
 
 import '../styles/AddActivity.css';
-import { IDsGenerator, IDsGeneratorRandom } from "../utils/IDsGenerator";
+import { IDsGenerator, IDsGeneratorRandom } from "../../utils/IDsGenerator";
 import ArtifactAttachmentForm from "./form-components/ArtifactAttachmentForm";
 import URLAttachmentForm from "./form-components/URLAttachmentForm";
 import TagForm from "./form-components/TagForm";

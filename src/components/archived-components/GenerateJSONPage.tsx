@@ -1,10 +1,10 @@
 import '../App.css'
-import { Taxonomy } from '../components/navigation/Taxonomy'
-import { Header } from '../components/Header';
+import { Taxonomy } from './navigation/Taxonomy'
+import { Header } from '../Navbar';
 import { useState } from 'react';
 import React from 'react';
-import { AppProps } from '../types';
-import UnitDisplay from '../components/UnitDisplay';
+import { AppProps } from '../../types';
+import UnitDisplay from './UnitDisplay';
 
 const GenerateJSON = () => {
 

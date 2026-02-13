@@ -1,8 +1,8 @@
 import '../App.css'
 import { useState } from 'react';
 import React from 'react';
-import { AppProps } from '../types';
-import UnitDisplay from '../components/UnitDisplay';
+import { AppProps } from '../../types';
+import UnitDisplay from './UnitDisplay';
 
 const GenerateActivitiesPage = () => {
 

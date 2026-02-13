@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { IoMdCloseCircle } from "react-icons/io";
 import { TopicType } from "./Module";
-import { IDsGenerator } from "../../utils/IDsGenerator";
+import { IDsGenerator } from "../../../utils/IDsGenerator";
 
 type TopicProps = {
     closeTopic: () => void,

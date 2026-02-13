@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { IoMdCloseCircle } from "react-icons/io";
 import { Topic } from "./Topic";
 import { IoMdAddCircle } from "react-icons/io";
-import { IDsGenerator } from "../../utils/IDsGenerator";
+import { IDsGenerator } from "../../../utils/IDsGenerator";
 
 export type ModuleType  = {
 

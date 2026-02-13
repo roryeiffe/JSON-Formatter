@@ -2,12 +2,28 @@ import React from 'react';
 import * as XLSX from 'xlsx';
 import { useState } from 'react';
 
+/**
+ * Takes in a string and converts it to PascalCase to ensure consistent activity naming conventions.
+ * @param name name of activity
+ * @returns sanitized name
+ */
 const sanitizeActivityName = (name: string) => {
-  // split based on spaces, capitalize each word, and join with no spaces
   return name
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
+}
+
+/**
+ * Given a string, converts it to an ArrayBuffer. This is used in the process of generating a new Excel file for download after mapping activities.
+ * @param s string to be converted to an ArrayBuffer
+ * @returns the resulting ArrayBuffer after conversion
+ */
+function s2ab(s: any) {
+  var buf = new ArrayBuffer(s.length);
+  var view = new Uint8Array(buf);
+  for (var i = 0; i != s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+  return buf;
 }
 
 const ActivityMappingUtil = () => {
@@ -19,10 +35,12 @@ const ActivityMappingUtil = () => {
     setUnitPrefix(value);
   }
 
+  /**
+   * Handle the file upload event, read the Excel file, and trigger the mapping process to generate a new Excel file with the mapped activities.
+   * @param event stores information about the file upload event, including the uploaded file. 
+   * @returns nothing, but triggers a download of the new Excel file with the mapped activities
+   */
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-
-
-
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -46,11 +64,16 @@ const ActivityMappingUtil = () => {
   }
 
 
+  /**
+   * Map activities to the appropriate format and generate a new Excel file for download. This function takes in the taxonomy 
+   * sheet from the uploaded Excel file, extracts the necessary information, creates new rows for each activity based on the mapping logic, 
+   * and then generates a new Excel file with these mapped activities that the user can download.
+   * @param taxonomySheet a representation of the taxonomy sheet
+   */
   const mapActivities = (taxonomySheet: any) => {
     const data = XLSX.utils.sheet_to_json<Record<string, any>>(taxonomySheet, { defval: '' });
 
     const newData: Record<string, any>[] = [...mapContentAndVideos(data), ...mapLectures(), ...mapReviewActivities()];
-
 
     const newWorksheet = XLSX.utils.json_to_sheet(newData);
     const newWorkbook = XLSX.utils.book_new();
@@ -72,11 +95,17 @@ const ActivityMappingUtil = () => {
     window.URL.revokeObjectURL(url);
   };
 
-
-
-
-
+  // Keep track of modules to ensure we create lectures for each module, 
+  // in addition to the content/video activities for each topic
   let modules = new Set<string>();
+
+  // Individual methods for mapping different types of activities
+
+  /**
+   * For each activity, we generate a learning content and video activity
+   * @param data the record, representing the current topic
+   * @returns the records for the learning content and video activities that were generated
+   */
   const mapContentAndVideos = (data: Record<string, any>[]) => {
     const newData: Record<string, any>[] = [];
 
@@ -113,10 +142,13 @@ const ActivityMappingUtil = () => {
       newData.push(contentRow);
       newData.push(videoRow);
     })
-
     return newData;
   }
 
+  /**
+   * For each module, we generate a lecture activity
+   * @returns the record for the lecture activity that was generated
+   */
   const mapLectures = () => {
     const newData: Record<string, any>[] = [];
     modules.forEach((module) => {
@@ -135,6 +167,10 @@ const ActivityMappingUtil = () => {
     return newData;
   }
 
+  /**
+   * Each unit has a specific set of review activities:
+   * @returns the generated records for the review activities
+   */
   const mapReviewActivities = () => {
     const newData: Record<string, any>[] = [];
     // Review Lecture
@@ -223,6 +259,7 @@ const ActivityMappingUtil = () => {
       <h2 className="text-xl font-bold mb-4">Unit Short-Hand (ex: Instead of "Master TypeScript Concepts", just "TypeScript")</h2>
       <input className="border p-2 rounded-md w-full" value={unitShortHand} onChange={(e) => setUnitShortHand(e.target.value)}></input>
       <h2 className="text-xl font-bold mb-4">Upload Excel File for Activity Mapping</h2>
+      <h3>(This excel file should only contain modules and topics in the "taxonomy" sheet. The resulting excel will contain the standard activities that are included in all units, based on those modules/topics. You can copy+paste the results of this back in the original Excel.)</h3>
       <input className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold rounded-lg shadow-lg transform text-center transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8"
         type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
     </div>
@@ -233,9 +270,3 @@ const ActivityMappingUtil = () => {
 
 export default ActivityMappingUtil;
 
-function s2ab(s: any) {
-  var buf = new ArrayBuffer(s.length);
-  var view = new Uint8Array(buf);
-  for (var i = 0; i != s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
-  return buf;
-}

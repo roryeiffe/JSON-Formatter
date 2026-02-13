@@ -3,7 +3,7 @@ import { IoMdCloseCircle } from "react-icons/io";
 import { Module, ModuleType } from "./Module";
 import React from "react";
 import { IoMdAddCircle } from "react-icons/io";
-import { IDsGenerator } from "../../utils/IDsGenerator";
+import { IDsGenerator } from "../../../utils/IDsGenerator";
 import { InputSeparator } from "../InputSeparator";
 
 /*Represenation of Navigation.json */

@@ -12,7 +12,7 @@ function UploadJSON({onFileRead}:any) {
     setDragging(false);
   };
 
-  const handleDrop = (event:any) => {
+  const handleDrop = (event: any) => {
     event.preventDefault();
     setDragging(false);
 

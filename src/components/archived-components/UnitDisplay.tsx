@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, act } from "react";
 
-import { Activity, HierarchyItem, HierarchyType, Unit } from "../types";
+import { Activity, HierarchyItem, HierarchyType, Unit } from "../../types";
 import '../styles/UnitDisplay.css';
 
 import AddActivity from "./AddActivity";

@@ -1,543 +1,197 @@
-import React, { act, useState } from 'react';
-import * as XLSX from 'xlsx';
+import React, { useState } from 'react';
 import { IDsGenerator, IDsGeneratorRandom } from '../utils/IDsGenerator';
-import { Activity, UnitActivity } from '../types';
-import { PRODUCTION_URL } from '../urls';
+import { ParsedRow, Unit, FormatBools, ParseContext, ExternalActivity, TaxonomyRow, FormatFiles, ActivityIds, NavigationJson } from '../types';
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-import { getActivityCode, setFormatBooleans } from '../utils/ActivityTypesUtil';
-import { updateActivityDescriptionAndInstructions } from '../utils/Description&InstructionUtil';
-import { downloadTaxonomyAllFormats } from '../utils/FormatFileUtil';
-import { returnVersionComment } from '../utils/VersionTracker';
-import axios from 'axios';
-import { dummyActivities } from '../utils/DummyActivities';
-
-const EMPTY_ACTIVITY: Activity = {
-  activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
-  duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
-  vsCodeExtensions: '', artifactAttachments: [], isILT: true, isIST: true, isPLT: true,
-}
-
-const sanitizeFilename = (filename: string) => {
-  return filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
-}
-
-type ParsedRow = Record<string, any>;
+import { setFormatBooleans } from '../utils/ActivityTypesFormatsUtil';
+import { updateActivityDescriptionAndInstructions } from '../utils/ActivityFieldGeneration';
+import { prepFormatFiles } from '../utils/FormatFileUtil';
+import { parseUploadedExcel } from '../utils/ExcelHelper';
+import { assignActivityByScope, buildBaseActivity, fetchExistingActivityIds, fetchUnitId, getOrCreateModuleTopic, postProcessActivity, resolveActivityContent } from '../utils/ParsingHelper';
+import { generate_navigation_json } from '../utils/NavigationHelper';
+import { createZipFolders, finalizeAndDownloadZip, writeExternalActivities, writeRootArtifacts, writeUnitStructureFiles } from '../utils/DownloadHelper';
 
 const ExcelUploader: React.FC = () => {
-  const [data, setData] = useState<ParsedRow[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const downloadFile = async (fileName: string, content: string) => {
-    const fileData = JSON.stringify(content);
-    // create a blob and remove all unnecessary fields
-    const blob = new Blob([fileData], { type: 'text/json' });
-    const url = URL.createObjectURL(blob);
-    const linkElement = document.createElement('a');
-    linkElement.download = `${fileName}`;
-    linkElement.href = url;
-    linkElement.click();
-    setLoading(false);
-  }
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setLoading(true);
+  /**
+   * This is triggered when we upload our excel file. Afterwards, the following workflow takes place:
+   * 1. Parse the excel into raw json rows (uses helper functions from ExcelHelper.ts)
+   * 2. Process the raw json into a structured unit representation (uses helper functions from ParsingHelper.ts)
+   * 3. Generate navigation.json (uses helper functions from NavigationHelper.ts)
+   * 4. Update activity fields and prepare format files (uses helper functions from FormatFileUtil.ts)
+   * 5. Generate zip structure and download (uses helper functions from DownloadHelper.ts)
+   * @param event 
+   * @returns 
+   */
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      setLoading(true);
+      if (!file) return;
 
-    reader.onload = async (e) => {
-      const binaryStr = e.target?.result;
-      if (!binaryStr) return;
+      const { unitName, taxonomyRows, exitCriteriaRows, metadataRows } = await parseUploadedExcel(file);
 
-      // get sheets:
-      const workbook = XLSX.read(binaryStr, { type: 'binary' });
-      const taxonomySheet = workbook.Sheets['Taxonomy'];
-      const exitCriteriaSheet = workbook.Sheets['Exit Criteria'];
-      const metadataSheet = workbook.Sheets['Metadata'];
+      const { unit, externalActivities, formatsToDownload, errorOccurredLocal, activityIds } =
+        await parseRawJSON(taxonomyRows, unitName);
 
-      let unitName = file.name.substring(0, file.name.lastIndexOf('.'));
-
-      // remove (n) from end:
-      unitName = unitName.replace(/\s*\(\d+\)\s*$/, '');
-
-      const endings = ["Unit Breakdown", "Structure", "Unit"];
-      // remove "Unit Breakdown" or "Structure" from the unit name if it exists
-      for (const ending of endings) {
-        if (unitName.endsWith(ending)) {
-          unitName = unitName.slice(0, -ending.length).trim();
-        }
-      }
-
-
-      // parse into JSON:
-      const taxonomyJson = XLSX.utils.sheet_to_json<ParsedRow>(taxonomySheet);
-      const exitCriteriaJson = XLSX.utils.sheet_to_json<ParsedRow>(exitCriteriaSheet);
-      const metadataJson = XLSX.utils.sheet_to_json<ParsedRow>(metadataSheet, { range: 1 });
-
-
-      // convert the Excel data to JSON, which will be used to generate the navigation JSON, the zip structure, and the save JSON
-      const result = await parseTaxonomyExcel(taxonomyJson, unitName);
-
-      if (result.errorOccurredLocal) {
+      if (errorOccurredLocal) {
         alert("Some errors occurred while processing the activities. Please check the console for details.");
-        setLoading(false);
         return;
       }
 
-      const parsedTaxonomy = result.unit;
-      const externalActivities = result.externalActivities;
-      const formatsToDownload = result.formatsToDownload;
+      const navigationJson = await generate_navigation_json(unit, exitCriteriaRows, metadataRows);
+      const formatFiles = await updateActivityFields(structuredClone(unit), activityIds);
 
-      // 
-      const navigation_json = await generate_navigation_json(parsedTaxonomy, exitCriteriaJson, metadataJson, file.name);
-      const format_files = await addActivityFields(structuredClone(parsedTaxonomy), result.activityIds);
-
-      // download the artifacts:
-      generateZipStructure(parsedTaxonomy, unitName, format_files, navigation_json, externalActivities, formatsToDownload);
-    };
-
-    reader.readAsBinaryString(file);
+      generateZipStructure(unit, unitName, formatFiles, navigationJson, externalActivities, formatsToDownload);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setLoading(false);
+      event.target.value = "";
+    }
   };
 
-  const parseTaxonomyExcel = async (raw_json: any[], fileName: string) => {
-    const unit: any = {
+
+  /**
+   * This function takes the raw json that was converted from excel and 
+   * formats it in a way that can be used in the navigation.json and format files
+   * This function utilizes a context object that allows us to pass along common data,
+   * like the unit representation, from function to function (found in ParsingHelper.ts)
+   * @param raw_taxonomy_json rows from the taxonomy sheet
+   * @param fileName name of unit (derived from file)
+   */
+  const parseRawJSON = async (raw_taxonomy_json: TaxonomyRow[], fileName: string) => {
+    const unit: Unit = {
       modules: [],
       unitActivities: [],
-      id: IDsGeneratorRandom(),
+      id: await fetchUnitId(fileName) || await IDsGenerator(fileName),
       title: fileName,
-      description: '',
+      description: "",
     };
 
-    let activityIds: any = {};
+    const ctx: ParseContext = {
+      unit,
+      externalActivities: [],
+      errorOccurredLocal: false,
+      activityIds: await fetchExistingActivityIds(unit.title),
+      dummyActivityTypes: new Set<string>(),
+      emptyActivityCount: 0,
+      nonEmptyActivityCount: 0,
+      idCache: new Map<string, string>(),
+    };
 
-    try {
-
-      // fetch existing activity ids, if exist:
-      activityIds = (await axios.post(`${PRODUCTION_URL}/fetch-activity-ids`, { unitName: unit.title })).data;
-    } catch (error) {
-      alert("Failed to fetch existing activity IDs. New IDs will be generated for all activities.");
-      console.error("Failed to fetch existing activity IDs:", error);
-    }
-
-
-
-
-    let externalActivities = [];
-
-    let errorOccurredLocal = false;
-
-    // keep track of activity types that have corresponding dummy activities created:
-    let dummyActivityTypes = new Set()
-    let found_empty_activity = false;
-
-    let emptyActivityCount = 0;
-    let nonEmptyActivityCount = 0;
-
-    for (const row of raw_json) {
+    // for each in the excel, we process the json using the helper methods
+    for (const row of raw_taxonomy_json) {
       const moduleTitle = row.Module?.trim();
       const topicTitle = row.Topic?.trim();
 
-      let currentModule = null;
-      let currentTopic = null;
+      // create/get module/topic
+      const { currentModule, currentTopic } = await getOrCreateModuleTopic(ctx, moduleTitle, topicTitle);
 
-      const isValidTitle = (title: string) => title && title.trim() && !["N/A", "NA", "n/a"].includes(title.trim());
+      // create activity
+      const activity = await buildBaseActivity(ctx, row);
+      if (!activity) continue;
 
+      // Handle the activity content itself, based on url
+      await resolveActivityContent(ctx, activity, row, unit.title, moduleTitle, topicTitle);
+      postProcessActivity(activity);
 
-      // === 1. Find or create the Module ===
-      if (isValidTitle(moduleTitle)) {
-        currentModule = unit.modules.find((mod: any) => mod.title === moduleTitle);
-
-        if (!currentModule) {
-          currentModule = {
-            id: await IDsGenerator(moduleTitle),
-            title: moduleTitle,
-            description: '',
-            topics: [],
-            moduleActivities: [],
-          };
-          unit.modules.push(currentModule);
-        }
-      }
-
-      // === 2. Find or create the Topic inside the Module ===
-      if (isValidTitle(topicTitle) && currentModule) {
-        currentTopic = currentModule.topics.find((top: any) => top.title === topicTitle);
-
-        if (!currentTopic) {
-          currentTopic = {
-            id: await IDsGenerator(topicTitle),
-            title: topicTitle,
-            description: '',
-            topicActivities: [],
-          };
-          currentModule.topics.push(currentTopic);
-        }
-      }
-
-      // === 3. Parse the Activity ===
-      let activityName: string = row["Activity Name"]?.trim();
-      if (!activityName) continue;
-
-      // Remove invalid filesystem characters from activityName
-      activityName = sanitizeFilename(activityName).trim();
-
-      // Initialize an empty activity:
-      const activity: any = {
-        ...EMPTY_ACTIVITY,
-        activityId: await IDsGenerator(activityName),
-        activityName,
-        displayName: row["Display Name"]?.trim(),
-        activityType: row["Activity Type"],
-        type: getActivityCode(row["Activity Type"]),
-        duration: row["Duration"],
-        isReview: row["Activity Grouping"]?.trim() === "Review",
-      };
-
-      let unitName = unit.title.replace(/ Unit/g, '');
-      let unitNameWithHyphens = unitName.replace(/ /g, '-').toLowerCase();
-
-      let url = row["Content URL"]?.trim();
-
-      // if there is a valid URL, process it:
-      if (url) {
-        nonEmptyActivityCount++;
-        try {
-          const parsedUrl = new URL(url);
-
-          const decodedPathName = decodeURIComponent(parsedUrl.pathname).toLowerCase();
-
-          activity.activityURL = url;
-
-          // If the activityURL is an external link and not one of the standard domains, update the UrlAttachment field:
-          const standardDomains = ['dev.azure.com', 'github.com', 'vimeo.com', 'youtube.com'];
-          const isStandardDomain = standardDomains.some(domain => parsedUrl.hostname.includes(domain));
-
-          if (!isStandardDomain) {
-            let currentTaxonomy = topicTitle || moduleTitle || unit.title;
-            let description;
-            if (activity.type === 'ACT007') description = `Reference material for ${activity.displayName}.`;
-            else description = `Additional resource for ${activity.displayName}.`;
-            const urlAttachment = {
-              name: `${activity.displayName} ${activity.type === 'ACT0062' ? 'Guide' : ''}`,
-              description,
-              url
-            };
-            activity.urlAttachments = [urlAttachment];
-          }
-
-          // If the activityURL is not an azure link, delete activityPath field since it is not needed:
-          if (!url.startsWith('https://dev.azure.com/Revature-Technology/Technology-Engineering/')) {
-            delete activity.activityPath; // Remove activityPath since we are not using it
-          }
-
-          // if the activityURL is an azure link and the file is local, then update the activityPath and delete activityURL:
-          else if (decodedPathName.includes(unitName.toLowerCase()) || decodedPathName.includes(unitNameWithHyphens)) {
-            // extract path from url:
-            let path = parsedUrl.searchParams.get('path') || '';
-            activity.activityPath = '.' + path;
-          }
-
-          else {
-            try {
-              const res = await axios.post(`${PRODUCTION_URL}/fetch-azure-file`, { url });
-              const data = res.data;
-              const markdown = JSON.parse(data.content).content;
-              const imgs = data.imgs || [];
-              const gifts = data.gifts || [];
-
-              externalActivities.push({ name: row["Activity Name"], content: markdown, imgs, gifts });
-              activity.activityPath = `./external-activities/${activity.activityName}.md`;
-            } catch (error) {
-              errorOccurredLocal = true;
-              console.error(`Failed to fetch external activity content for URL: ${url}`, error);
-              // Optional: set fallback data or mark activity as failed
-              activity.activityPath = null; // or some placeholder
-            }
-          }
-        } catch (error) {
-          errorOccurredLocal = true;
-          console.log(url);
-          console.error(error);
-          console.error(`Invalid URL for activity "${activityName}":`, url);
-          activity.activityURL = url;
-        }
-
-        if (!(activity.activityPath || activity.activityURL)) {
-          errorOccurredLocal = true;
-          console.error(`Activity "${activityName}" has no valid URL or path.`);
-        }
-      }
-      // if there is no valid URL, create a dummy activity (if none exists for this type yet)
-      else {
-        emptyActivityCount++;
-        const activityType = row["Activity Type"];
-
-        if (activityType === "Lesson - Video") {
-          activity.activityURL = "https://vimeo.com/1146990738";
-        }
-
-        else if (activityType === "Reference") {
-          activity.urlAttachments = [{
-            name: `${activity.displayName} Guide`,
-            description: `Reference material for ${activity.displayName}.`,
-            url: 'https://coda.io/d/_d_FyQRVQKou/Reference-Activity_su3JMcEv'
-          }];
-        }
-
-        else {
-          let markdownContent = dummyActivities[activityType];
-          if (!markdownContent) {
-            markdownContent = "## This is a Dummy Activity\n\n" + markdownContent;
-          }
-          const dummyFileName = `${activityType.replace(/[^a-zA-Z0-9]/g, '')}-dummy`;
-          if (!dummyActivityTypes.has(activityType)) {
-            // create a markdown file for this dummy activity
-            externalActivities.push({ name: dummyFileName, content: markdownContent, imgs: [], gifts: [] });
-            dummyActivityTypes.add(activityType);
-          }
-          activity.activityPath = `./external-activities/${dummyFileName}.md`;
-
-          delete activity.activityURL;
-        }
-
-
-
-
-      }
-
-
-
-      if (activity.activityType.startsWith("Lab -")) {
-        activity.githubRepositoryUrl = activity.activityURL;
-        delete activity.activityURL;
-
-      }
-
-      // === 4. Assign Activity based on Scope ===
-      const scope = row["Activity Scope"]?.trim().toLowerCase();
-      if (scope === 'unit') {
-        unit.unitActivities.push(activity);
-      } else if (scope === 'module' && currentModule) {
-        currentModule.moduleActivities.push(activity);
-      } else if (scope === 'topic' && currentTopic) {
-        currentTopic.topicActivities.push(activity);
-      } else {
-        console.warn(`Activity "${activityName}" has an invalid scope: [${scope}]`);
-        errorOccurredLocal = true;
-      }
+      // Assign activity to the corresponding unit/module/topic
+      assignActivityByScope(ctx, activity, row["Activity Scope"], currentModule, currentTopic);
     }
 
-    if (emptyActivityCount > 0) {
-      alert("Some activities were missing URLs and have been replaced with dummy activities. Please check the external-activities folder in the generated zip.");
+    if (ctx.emptyActivityCount > 0) {
+      alert(
+        "Some activities were missing URLs and have been replaced with dummy activities. Please check the external-activities folder in the generated zip."
+      );
     }
 
-    let formatsToDownload = {
+    const formatsToDownload: FormatBools = {
       ILT: true,
-      IST: nonEmptyActivityCount > 0,
-      PLT: emptyActivityCount === 0
-    }
+      IST: ctx.nonEmptyActivityCount > 0,
+      PLT: ctx.emptyActivityCount === 0,
+    };
 
-    return { unit, externalActivities, errorOccurredLocal, activityIds, formatsToDownload };
+    return {
+      unit: ctx.unit,
+      externalActivities: ctx.externalActivities,
+      errorOccurredLocal: ctx.errorOccurredLocal,
+      activityIds: ctx.activityIds,
+      formatsToDownload,
+    };
   };
 
-
-
-  const generateZipStructure = async (unit: any, unitName: string, format_files: any, navigation_json: any, externalActivities: any, formatsToDownload: any) => {
-
-    const zip = new JSZip();
-    const rootFolder = zip.folder(unitName || 'unit');
-    const moduleContainerFolder = rootFolder?.folder('modules');
-
-    const externalActivitiesFolder = rootFolder?.folder('external-activities');
-    for (const activity of externalActivities) {
-      for (const img of activity.imgs) {
-        img.newName = activity.name + 'Assets/' + img.name;
-        // replace all instances of the old image name in the markdown content with the new path
-        activity.content = activity.content.replace(new RegExp(img.oldName, 'g'), img.newName);
-        // save image data to the specified file name within the external-activities folder
-        externalActivitiesFolder?.file(img.newName, img.imgData, { base64: true });
-      }
-      for (const gift of activity.gifts) {
-        gift.newName = activity.name + 'Assets/' + gift.name;
-        activity.content = activity.content.replace(new RegExp(gift.oldName, 'g'), gift.newName);
-        externalActivitiesFolder?.file(gift.newName, gift.giftData, { base64: true });
-      }
-      externalActivitiesFolder?.file(`${activity.name}.md`, activity.content);
-
-    }
-
-
-
-
-    let moduleCount = 1;
-    for (const module of unit.modules) {
-      if (!module.title) {
-        console.warn(`Module ${moduleCount} has no title, skipping...`);
-        continue;
-      }
-      const moduleFolder = moduleContainerFolder?.folder(String(moduleCount).padStart(3, '0') + '-' + sanitizeFilename(module.title));
-
-      let topicCount = 1;
-      for (const topic of module.topics) {
-        if (!topic.title) {
-          console.warn(`Topic ${topicCount} in Module ${module.title} has no title, skipping...`);
-          continue;
-        }
-        const topicFolder = moduleFolder?.folder(String(topicCount).padStart(3, '0') + '-' + sanitizeFilename(topic.title));
-        for (const activity of topic.topicActivities) {
-          updateActivityDescriptionAndInstructions(activity, unit.title);
-
-          let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
-
-
-          const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
-            'Activity URL: ' + activityUrl + '\n' +
-            'Activity Description: ' + activity.description;
-          topicFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-          if (activity.activityPath || activity.githubRepositoryUrl) delete activity.activityURL;
-        }
-        topicCount++;
-
-      }
-
-      for (const activity of module.moduleActivities) {
-        updateActivityDescriptionAndInstructions(activity, unit.title);
-        let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
-        const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
-          'Activity URL: ' + activityUrl + '\n' +
-          'Activity Description: ' + activity.description;
-        moduleFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-        if (activity.activityPath || activity.githubRepositoryUrl) delete activity.activityURL;
-      }
-      moduleCount++;
-
-
-    }
-
-
-    for (const activity of unit.unitActivities) {
-      updateActivityDescriptionAndInstructions(activity, unit.title);
-      let activityUrl = activity.activityURL || activity.activityPath || activity.githubRepositoryUrl;
-      const fileContent = 'Activity Name: ' + activity.displayName + '\n' +
-        'Activity URL: ' + activityUrl + '\n' +
-        'Activity Description: ' + activity.description;
-      rootFolder?.file(`${sanitizeFilename(activity.activityName)}.md`, fileContent);
-      if (activity.activityPath || activity.githubRepositoryUrl) delete activity.activityURL;
-    }
-
-    navigation_json.templates = [`${sanitizeFilename(unit.title)}-taxonomy-ILT`, `${sanitizeFilename(unit.title)}-taxonomy-IST`, `${sanitizeFilename(unit.title)}-taxonomy-PLT`];
-
-    if (!formatsToDownload.IST) {
-      navigation_json.templates = navigation_json.templates.filter((template: string) => !template.endsWith('-IST'));
-    }
-
-    if (!formatsToDownload.PLT) {
-      navigation_json.templates = navigation_json.templates.filter((template: string) => !template.endsWith('-PLT'));
-    }
-
-
-    rootFolder?.file(`navigation.json`, JSON.stringify(navigation_json, null, 2));
-    rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-ILT.json`, JSON.stringify(format_files.ILTFormatFile, null, 2));
-    if (formatsToDownload.IST) rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-IST.json`, JSON.stringify(format_files.ISTFormatFile, null, 2));
-    if (formatsToDownload.PLT) rootFolder?.file(`${sanitizeFilename(unit.title)}-taxonomy-PLT.json`, JSON.stringify(format_files.PLTFormatFile, null, 2));
-    rootFolder?.file(`${sanitizeFilename(unit.title)}-version-metadata.md`, returnVersionComment());
-
-    // Generate and trigger download
-    const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `${unitName || 'unit'}-generated-files.zip`);
-  };
-
-  const generate_navigation_json = async (parsedExcel: any, exit_criteria_json: any[], metadata_json: any[], fileName: string) => {
-    let navigation_json: any = structuredClone(parsedExcel);
-    navigation_json = {
-      ...navigation_json,
-      exitcriteria: [],
-      tags: [],
-      skill: parsedExcel.title
-    }
-
-    // sum up the duration of all activities in the unit:
-    let totalDuration = 0;
-    for (const activity of navigation_json.unitActivities) {
-      totalDuration += activity.duration || 0;
-    }
-    for (const module of navigation_json.modules) {
-      for (const activity of module.moduleActivities) {
-        totalDuration += activity.duration || 0;
-      }
-      for (const topic of module.topics) {
-        for (const activity of topic.topicActivities) {
-          totalDuration += activity.duration || 0;
-        }
-      }
-    }
-
-    navigation_json.duration = totalDuration;
-
-    // Exit Criteria:
-    for (const row of exit_criteria_json) {
-      const exitCriteriaTitle = row["Exit Criteria"]?.trim();
-      const assessmentApproach = row["Assessment Approach"]?.trim();
-      navigation_json.exitcriteria.push({
-        title: exitCriteriaTitle,
-        assessmentApproach,
-      });
-    }
-
-    // Metadata:
-    for (const row of metadata_json) {
-      navigation_json.tags.push(row["Tag Value"]?.trim());
-
-    }
-
-    // Navigation JSON:
-    delete navigation_json.unitActivities; // Remove activities from navigation_json to avoid duplication
-    for (const module of navigation_json.modules) {
-      delete module.moduleActivities; // Remove activities from each module
-      for (const topic of module.topics) {
-        delete topic.topicActivities; // Remove activities from each topic
-      }
-    }
-
-    return navigation_json;
-  };
-
-
-  const addActivityFields = async (parsedTaxonomy: any, activityIds: any) => {
-    let save_file = structuredClone(parsedTaxonomy);
+  /**
+   * Creates a clone of the given taxonomy and updates the activity fields using the
+   * Activity util files (ActivityTypesUtil.ts and ActivityFieldGeneration.ts)
+   * @param parsedTaxonomy 
+   * @param activityIds 
+   * @returns 
+   */
+  const updateActivityFields = async (parsedTaxonomy: Unit, activityIds: ActivityIds) => {
+    let taxonomyClone = structuredClone(parsedTaxonomy);
 
     // unit:
-    delete save_file.description;
-    for (const activity of save_file.unitActivities) {
+    delete taxonomyClone.description;
+    for (const activity of taxonomyClone.unitActivities!) {
       setFormatBooleans(activity);
-      updateActivityDescriptionAndInstructions(activity, save_file.title);
+      updateActivityDescriptionAndInstructions(activity, taxonomyClone.title);
     }
     //modules:
     let moduleCount = 1;
-    for (const module of save_file.modules) {
+    for (const module of taxonomyClone.modules) {
       delete module.description;
-      for (const activity of module.moduleActivities) {
+      for (const activity of module.moduleActivities!) {
         setFormatBooleans(activity);
-        updateActivityDescriptionAndInstructions(activity, save_file.title);
+        updateActivityDescriptionAndInstructions(activity, taxonomyClone.title);
       }
       //topics:
       let topicCount = 1;
       for (const topic of module.topics) {
         delete topic.description;
-        for (const activity of topic.topicActivities) {
+        for (const activity of topic.topicActivities!) {
           setFormatBooleans(activity);
-          updateActivityDescriptionAndInstructions(activity, save_file.title);
+          updateActivityDescriptionAndInstructions(activity, taxonomyClone.title);
         }
         topicCount++;
       }
       moduleCount++;
     }
 
-    downloadFile('Use-This-To-Update-Activities.json', save_file);
+    return prepFormatFiles(taxonomyClone, activityIds);
+  };
 
-    return downloadTaxonomyAllFormats(save_file, activityIds);
+
+
+  /**
+   * Generates and downloads the final structure including:
+   * - navigation.json
+   * - format files (ILT always; IST/PLT optionally)
+   * - module/topic/unit structure (activity stub .md files)
+   * - external activities (markdown + assets)
+   */
+  const generateZipStructure = async (
+    unit: Unit,
+    unitName: string,
+    format_files: FormatFiles,
+    navigation_json: NavigationJson,
+    externalActivities: ExternalActivity[],
+    formatsToDownload: FormatBools
+  ) => {
+    const zip = new JSZip();
+
+    const { rootFolder, moduleContainerFolder, externalActivitiesFolder } =
+      createZipFolders(zip, unitName);
+
+    writeExternalActivities(externalActivitiesFolder, externalActivities);
+
+    writeUnitStructureFiles(rootFolder, moduleContainerFolder, unit);
+
+    writeRootArtifacts(rootFolder, unit.title, navigation_json, format_files, formatsToDownload);
+
+    await finalizeAndDownloadZip(zip, unitName);
   };
 
   return (
@@ -545,13 +199,6 @@ const ExcelUploader: React.FC = () => {
       <h2 className="text-xl font-bold mb-4">Upload Excel File</h2>
       <input className="mt-2 m-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-semibold rounded-lg shadow-lg transform text-center transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl mx-auto focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer mb-8"
         type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
-
-      {data.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold mb-2">Parsed Data Preview:</h3>
-          <pre className="bg-gray-100 p-2 rounded overflow-x-auto max-h-64">{JSON.stringify(data, null, 2)}</pre>
-        </div>
-      )}
       {loading && <img src='./loading.gif' width='50px' />}
     </div>
   );

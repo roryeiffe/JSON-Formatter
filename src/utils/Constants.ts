@@ -1,3 +1,5 @@
+import { Activity, NavigationJson, NavigationJSONHelper } from "../types"
+
 const OFFICE_HOURS_DUMMY = `
 # Office Hours
 
@@ -23,11 +25,27 @@ During office hours, you have the chance to ask your instructor for guidance. He
 
 
 
-export const dummyActivities: {[key: string]: any} = {
+export const dummyActivities: {[key: string]: string} = {
   "Lesson - Learning Content": "## This is a Dummy Learning Content Activity\n\nThis activity is a placeholder for a learning content activity",
   "Assignment": "## This is a Dummy Assignment Activity\n\nThis activity is a placeholder for an assignment activity",
   "Reference": "## This is a Dummy Reference Activity\n\nThis activity is a placeholder for a reference activity",
   "Self Study": "## This is a Dummy Self Study Activity\n\nThis activity is a placeholder for a self study activity",
   "Lesson - Live Lecture": "## This is a Dummy Live Lecture Activity\n\nThis activity is a placeholder for a live lecture activity",
   "Office Hours": OFFICE_HOURS_DUMMY
+}
+
+export const EMPTY_ACTIVITY: Activity = {
+  activityId: '', activityName: '', displayName: '', activityPath: '', activityURL: '', activityType: '', type: '', description: '', instruction: '', trainerNotes: '',
+  duration: 0, tags: [], skills: [], createdAt: new Date(), isReview: false, isOptional: false, maxScore: 0, githubRepositoryUrl: '',
+  vsCodeExtensions: '', artifactAttachments: [], isILT: true, isIST: true, isPLT: true,
+}
+
+export const EXCEL_FILE_ENDINGS = ["Unit Breakdown", "Structure", "Unit", "Unit Structure"];
+
+export const EMPTY_NAVIGATION_JSON: NavigationJSONHelper = {
+  templates: [],
+  duration: 0,
+  tags: [],
+  exitcriteria: [],
+  skill: ''
 }
