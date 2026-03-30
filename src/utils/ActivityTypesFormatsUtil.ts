@@ -24,8 +24,8 @@ const activityToCodeMap: Record<string, string> = {
 
 // List of activity types included in IST and PLT types
 // Also include separate types for review
-const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours", "Lesson - Video"];
-const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Video", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge"]
+const ISTActivityTypes = ["Lesson - Learning Content", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours", "Lesson - Video", "Reference"];
+const ISTReviewTypes   = ["Lesson - Learning Content", "Lesson - Video", "Lesson - Live Lecture", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Reference"]
 const PLTActivityTypes = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Self Study", "Office Hours","Reference", "Lesson - Video"]
 const PLTReviewTypes   = ["Lesson - Learning Content", "Assignment", "Lab - Coding Lab", "Lab - Mini Project", "Lab - Coding Challenge", "Reference", "Lesson - Video"]
 
