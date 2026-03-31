@@ -88,6 +88,7 @@ Because the process of converting excel files to JSON files involves multiple st
 | V1.10 | 12/15/2025 | Added logic to generate dummy files if activity links are missing from excel file. |
 | V1.11 | 12/16/2025 | Modified logic for dummy reference and dummy videos. Also added conditional downloading of different format files (ILT will always be downloaded, IST if there is at least one activity URL, and PLT if all activity URLs are filled out.)
 | V2.0 | 02/05/2026 | Refactored code into modular utility files for better maintainability. Updated types and removed uses of 'any' type. Removed unused code, code, comments, and imports. |
+| V2.1 | 01/31/2026 | Added Reference types to IST format |
 
 ## Deploying Changes
 - Make changes to code
