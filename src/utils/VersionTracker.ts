@@ -4,7 +4,7 @@
  * And, update this version value so every time we generate a new unit, it will include this small snippet
  * indicating what version of the formatter was used.
  */
-const version = 'v2.0';
+const version = 'v2.1';
 
 export const returnVersionComment = () => {
     return `// Version: ${version} - This comment is auto-generated. Do not edit manually.`;
